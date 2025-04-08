@@ -16,7 +16,7 @@ const Unauthorized: React.FC = () => {
           You don't have permission to access this page. Please contact your administrator if you believe this is an error.
         </p>
         <Button asChild>
-          <Link to="/dashboard">Return to Dashboard</Link>
+          <Link to="/login">Return to Login</Link>
         </Button>
       </div>
     </div>

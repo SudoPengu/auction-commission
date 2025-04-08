@@ -1,9 +1,8 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { toast } from "../components/ui/use-toast";
 
 // User roles
-export type UserRole = 'bidder' | 'staff' | 'admin' | 'super-admin';
+export type UserRole = 'staff' | 'admin' | 'super-admin';
 
 // User interface
 export interface User {
@@ -41,12 +40,6 @@ const mockUsers: User[] = [
     name: 'Super Admin',
     role: 'super-admin',
     code: 'super123'
-  },
-  {
-    id: '4',
-    name: 'Bidder User',
-    role: 'bidder',
-    code: 'bidder123'
   }
 ];
 
