@@ -1,10 +1,16 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ShieldAlert } from 'lucide-react';
 
 const Unauthorized: React.FC = () => {
+  const navigate = useNavigate();
+  
+  const handleReturnToLogin = () => {
+    navigate('/login');
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="text-center space-y-6 max-w-md">
@@ -15,8 +21,8 @@ const Unauthorized: React.FC = () => {
         <p className="text-muted-foreground">
           You don't have permission to access this page. Please contact your administrator if you believe this is an error.
         </p>
-        <Button asChild>
-          <Link to="/login">Return to Login</Link>
+        <Button onClick={handleReturnToLogin}>
+          Return to Login
         </Button>
       </div>
     </div>
