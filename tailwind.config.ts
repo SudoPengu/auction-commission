@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,19 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// BlueSky custom colors
+				bluesky: {
+					50: '#f0f7ff',
+					100: '#e0eefe',
+					200: '#c0ddfd',
+					300: '#8bc2fa',
+					400: '#509ef6',
+					500: '#2678eb',
+					600: '#155bd8',
+					700: '#1348c1',
+					800: '#153d9d',
+					900: '#17367d',
 				}
 			},
 			borderRadius: {
