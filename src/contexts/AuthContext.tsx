@@ -133,10 +133,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Don't block login if activity logging fails
         }
         
-        toast({
-          title: "Login successful",
-          description: `Welcome back!`,
-        });
+        // Fetch user profile
+        const userProfile = await fetchUserProfile(data.user.id);
+        setProfile(userProfile);
         
         return true;
       }

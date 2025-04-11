@@ -5,11 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Mail, Lock, Info } from 'lucide-react';
+import { Mail, Lock } from 'lucide-react';
 import Logo from '../components/Logo';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from "@/components/ui/use-toast";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -28,6 +27,10 @@ const Login: React.FC = () => {
       
       if (success) {
         navigate('/dashboard');
+        toast({
+          title: "Login successful",
+          description: `Welcome back!`,
+        });
       } else {
         toast({
           variant: "destructive",
@@ -60,15 +63,6 @@ const Login: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 p-6">
-          <Alert variant="default" className="bg-blue-50 mb-4">
-            <Info className="h-4 w-4" />
-            <AlertTitle>Important Note</AlertTitle>
-            <AlertDescription>
-              These test accounts must be created in your Supabase database first. 
-              Please refer to Supabase authentication documentation for adding these users.
-            </AlertDescription>
-          </Alert>
-          
           <form onSubmit={handleLoginSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

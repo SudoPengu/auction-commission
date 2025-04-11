@@ -1,21 +1,28 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { BarChart, LineChart, PieChart } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { toast } from "@/components/ui/use-toast";
 
 type TimeFrame = '1D' | '1W' | '1M' | '3M' | '1Y';
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('1D');
   
-  // Only admin and super-admin can see analytics
-  const canViewAnalytics = user && ['admin', 'super-admin'].includes(user.role);
+  useEffect(() => {
+    console.log("Dashboard mounted, user profile:", profile);
+    
+    toast({
+      title: "Dashboard Loaded",
+      description: `Welcome ${profile?.full_name || 'User'}!`,
+    });
+  }, [profile]);
   
-  // Mock data for demonstration
+  const canViewAnalytics = profile && ['admin', 'super-admin'].includes(profile.role);
+  
   const getRandomData = (length: number) => {
     return Array.from({ length }, () => Math.floor(Math.random() * 100));
   };
@@ -34,6 +41,11 @@ const Dashboard: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <div>
+          <p className="text-sm text-muted-foreground">
+            Logged in as: <span className="font-semibold">{profile?.full_name} ({profile?.role})</span>
+          </p>
+        </div>
       </div>
       
       {canViewAnalytics ? (
@@ -42,7 +54,7 @@ const Dashboard: React.FC = () => {
             {(['1D', '1W', '1M', '3M', '1Y'] as TimeFrame[]).map(time => (
               <button
                 key={time}
-                className={`time-button ${timeFrame === time ? 'active' : ''}`}
+                className={`px-3 py-1 rounded ${timeFrame === time ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
                 onClick={() => setTimeFrame(time)}
               >
                 {time}
@@ -157,7 +169,7 @@ const Dashboard: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="h-[200px] flex items-center justify-center">
-              <Button className="bluesky-gradient" onClick={() => window.location.href = '/pos'}>
+              <Button className="bg-primary hover:bg-primary/90" onClick={() => window.location.href = '/pos'}>
                 Open POS
               </Button>
             </CardContent>

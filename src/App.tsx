@@ -19,18 +19,27 @@ const queryClient = new QueryClient();
 
 // Separated routes component to avoid nesting inside App
 const AppRoutes = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  // If auth is still loading, show a simple spinner
+  if (isLoading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center">
+        <div className="animate-pulse text-lg">Loading...</div>
+      </div>
+    );
+  }
   
   return (
     <Routes>
       <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" replace />} />
       
-      <Route element={
+      <Route path="/" element={
         <ProtectedRoute allowedRoles={['staff', 'admin', 'super-admin'] as UserRole[]}>
           <Layout />
         </ProtectedRoute>
       }>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/pos" element={<POS />} />
         <Route path="/analytics" element={

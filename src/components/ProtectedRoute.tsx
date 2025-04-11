@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth, UserRole } from '../contexts/AuthContext';
 
 interface ProtectedRouteProps {
@@ -27,7 +28,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" replace />;
   }
 
-  // If authenticated but not allowed for this route, redirect to unauthorized
+  // If authenticated but not allowed for this route, redirect to dashboard
   if (profile && !allowedRoles.includes(profile.role)) {
     return <Navigate to="/dashboard" replace />;
   }
