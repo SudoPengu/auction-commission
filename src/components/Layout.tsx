@@ -1,7 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -9,10 +11,27 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { isAuthenticated, profile } = useAuth();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    console.log("Layout mounted, auth state:", { isAuthenticated, profileRole: profile?.role });
+    
+    // Redirect to login if not authenticated
+    if (!isAuthenticated) {
+      console.log("Not authenticated in Layout, redirecting to login");
+      navigate('/login');
+    }
+  }, [isAuthenticated, profile, navigate]);
   
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
+
+  // If not authenticated, don't render anything (redirect will happen in useEffect)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background flex">

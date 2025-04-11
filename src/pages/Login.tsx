@@ -37,17 +37,11 @@ const Login: React.FC = () => {
       
       if (success) {
         console.log("Login successful, navigating to dashboard");
-        navigate('/dashboard');
         toast({
           title: "Login successful",
           description: `Welcome back!`,
         });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Login Failed",
-          description: "Invalid credentials or your account may not be set up in the system.",
-        });
+        navigate('/dashboard');
       }
     } catch (error) {
       console.error('Login error:', error);

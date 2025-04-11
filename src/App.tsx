@@ -34,12 +34,16 @@ const AppRoutes = () => {
   
   return (
     <Routes>
+      {/* Public routes */}
       <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" replace />} />
       
-      <Route path="/" element={<ProtectedRoute />}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
+      {/* Protected routes */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
         <Route path="/pos" element={<Layout><POS /></Layout>} />
+        
+        {/* Admin only routes */}
         <Route path="/analytics" element={
           <ProtectedRoute allowedRoles={['admin', 'super-admin'] as UserRole[]}>
             <Layout><Analytics /></Layout>
@@ -57,6 +61,7 @@ const AppRoutes = () => {
         } />
       </Route>
       
+      {/* Not found route */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -64,15 +69,15 @@ const AppRoutes = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
           <AppRoutes />
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
+        </TooltipProvider>
+      </AuthProvider>
+    </BrowserRouter>
   </QueryClientProvider>
 );
 

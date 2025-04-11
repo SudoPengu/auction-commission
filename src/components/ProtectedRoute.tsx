@@ -1,5 +1,6 @@
-import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+
+import React, { useEffect } from 'react';
+import { Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth, UserRole } from '../contexts/AuthContext';
 
 interface ProtectedRouteProps {
@@ -12,8 +13,26 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles = ['staff', 'admin', 'super-admin']
 }) => {
   const { isAuthenticated, profile, isLoading } = useAuth();
+  const navigate = useNavigate();
   
-  console.log("ProtectedRoute check:", { isAuthenticated, profileRole: profile?.role, allowedRoles, isLoading });
+  console.log("ProtectedRoute check:", { 
+    isAuthenticated, 
+    profileRole: profile?.role, 
+    allowedRoles, 
+    isLoading 
+  });
+
+  useEffect(() => {
+    // Debug navigation issues
+    if (isAuthenticated && profile) {
+      console.log("User authenticated with role:", profile.role);
+      if (allowedRoles.includes(profile.role)) {
+        console.log("User has authorized role for this route");
+      } else {
+        console.log("User does not have authorized role for this route");
+      }
+    }
+  }, [isAuthenticated, profile, allowedRoles]);
 
   // If still loading, show a simple loading indicator
   if (isLoading) {
