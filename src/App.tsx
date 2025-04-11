@@ -21,6 +21,8 @@ const queryClient = new QueryClient();
 const AppRoutes = () => {
   const { isAuthenticated, isLoading } = useAuth();
   
+  console.log("AppRoutes rendering - Auth state:", { isAuthenticated, isLoading });
+  
   // If auth is still loading, show a simple spinner
   if (isLoading) {
     return (
@@ -34,27 +36,23 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" replace />} />
       
-      <Route path="/" element={
-        <ProtectedRoute allowedRoles={['staff', 'admin', 'super-admin'] as UserRole[]}>
-          <Layout />
-        </ProtectedRoute>
-      }>
+      <Route path="/" element={<ProtectedRoute />}>
         <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/pos" element={<POS />} />
+        <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+        <Route path="/pos" element={<Layout><POS /></Layout>} />
         <Route path="/analytics" element={
           <ProtectedRoute allowedRoles={['admin', 'super-admin'] as UserRole[]}>
-            <Analytics />
+            <Layout><Analytics /></Layout>
           </ProtectedRoute>
         } />
         <Route path="/users" element={
           <ProtectedRoute allowedRoles={['admin', 'super-admin'] as UserRole[]}>
-            <Users />
+            <Layout><Users /></Layout>
           </ProtectedRoute>
         } />
         <Route path="/settings" element={
           <ProtectedRoute allowedRoles={['admin', 'super-admin'] as UserRole[]}>
-            <Settings />
+            <Layout><Settings /></Layout>
           </ProtectedRoute>
         } />
       </Route>

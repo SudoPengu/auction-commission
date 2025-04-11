@@ -1,10 +1,13 @@
 
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
 
-const Layout: React.FC = () => {
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   const toggleSidebar = () => {
@@ -19,7 +22,7 @@ const Layout: React.FC = () => {
         <Header toggleSidebar={toggleSidebar} />
         
         <main className="flex-1 overflow-y-auto p-4">
-          <Outlet />
+          {children}
         </main>
       </div>
     </div>

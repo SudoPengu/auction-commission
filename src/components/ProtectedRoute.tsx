@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth, UserRole } from '../contexts/AuthContext';
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   allowedRoles?: UserRole[];
 }
 
@@ -13,6 +12,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles = ['staff', 'admin', 'super-admin']
 }) => {
   const { isAuthenticated, profile, isLoading } = useAuth();
+  
+  console.log("ProtectedRoute check:", { isAuthenticated, profileRole: profile?.role, allowedRoles, isLoading });
 
   // If still loading, show a simple loading indicator
   if (isLoading) {
@@ -25,16 +26,19 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // If not authenticated, redirect to login
   if (!isAuthenticated) {
+    console.log("Not authenticated, redirecting to login");
     return <Navigate to="/login" replace />;
   }
 
   // If authenticated but not allowed for this route, redirect to dashboard
   if (profile && !allowedRoles.includes(profile.role)) {
+    console.log("Not authorized for this route, redirecting to dashboard");
     return <Navigate to="/dashboard" replace />;
   }
 
   // Otherwise render the protected content
-  return <>{children}</>;
+  console.log("Rendering protected content");
+  return <>{children || <Outlet />}</>;
 };
 
 export default ProtectedRoute;

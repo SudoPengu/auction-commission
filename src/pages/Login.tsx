@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,8 +14,17 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    console.log("Login component - isAuthenticated:", isAuthenticated);
+    if (isAuthenticated) {
+      console.log("User is authenticated, redirecting to dashboard");
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,9 +32,11 @@ const Login: React.FC = () => {
     
     setIsSubmitting(true);
     try {
+      console.log("Attempting login with:", email);
       const success = await login(email, password);
       
       if (success) {
+        console.log("Login successful, navigating to dashboard");
         navigate('/dashboard');
         toast({
           title: "Login successful",
@@ -109,13 +120,6 @@ const Login: React.FC = () => {
             <p className="text-muted-foreground">
               POS System Authorized Access Only
             </p>
-          </div>
-
-          <div className="border p-4 rounded-md bg-muted/30 text-sm">
-            <h3 className="font-semibold mb-2">Test Account Credentials:</h3>
-            <p><strong>Staff account:</strong> staff@bluesky.com / staff123</p>
-            <p><strong>Admin account:</strong> admin@bluesky.com / admin123</p>
-            <p><strong>Super Admin:</strong> superadmin@bluesky.com / superadmin123</p>
           </div>
         </CardContent>
       </Card>

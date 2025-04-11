@@ -36,8 +36,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Debug log
+  useEffect(() => {
+    console.log("Auth state:", { user, profile, isAuthenticated: !!user && !!profile, isLoading });
+  }, [user, profile, isLoading]);
+
   // Fetch user profile
   const fetchUserProfile = async (userId: string) => {
+    console.log("Fetching profile for user ID:", userId);
     try {
       const { data, error } = await supabase
         .from('user_profiles')
@@ -51,9 +57,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data) {
+        console.log("Profile found:", data);
         return data as UserProfile;
       }
       
+      console.log("No profile found for user ID:", userId);
       return null;
     } catch (error) {
       console.error('Unexpected error fetching profile:', error);
@@ -63,14 +71,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Authentication state listener
   useEffect(() => {
+    console.log("Setting up auth state listener");
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setIsLoading(true);
+      (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.id);
         
         if (session?.user) {
           setUser(session.user);
           
-          // Fetch user profile after authentication
+          // Use setTimeout to avoid potential deadlocks with Supabase client
           setTimeout(async () => {
             const profile = await fetchUserProfile(session.user.id);
             setProfile(profile);
@@ -86,6 +96,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Check for existing session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log("Initial session check:", session?.user?.id);
+      
       if (session?.user) {
         setUser(session.user);
         const profile = await fetchUserProfile(session.user.id);
@@ -102,6 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Login function
   const login = async (email: string, password: string): Promise<boolean> => {
+    console.log("Login attempt for:", email);
     setIsLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -121,6 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
+        console.log("Authenticated user:", data.user.id);
         try {
           // Log activity
           await supabase.rpc('log_activity', {
@@ -136,6 +150,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Fetch user profile
         const userProfile = await fetchUserProfile(data.user.id);
         setProfile(userProfile);
+        
+        if (!userProfile) {
+          console.error("Authentication successful but no user profile found");
+          toast({
+            variant: "destructive",
+            title: "Profile not found",
+            description: "Your account exists but no profile is associated with it. Please contact an administrator.",
+          });
+          // Still return true since authentication succeeded
+        }
         
         return true;
       }
