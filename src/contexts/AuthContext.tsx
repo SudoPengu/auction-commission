@@ -110,6 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
+        console.error("Login error:", error);
         toast({
           variant: "destructive",
           title: "Login failed",
@@ -120,12 +121,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
-        // Log activity
-        await supabase.rpc('log_activity', {
-          action: 'login',
-          resource: 'auth',
-          details: { method: 'email' }
-        });
+        try {
+          // Log activity
+          await supabase.rpc('log_activity', {
+            action: 'login',
+            resource: 'auth',
+            details: { method: 'email' }
+          });
+        } catch (err) {
+          console.error("Error logging activity:", err);
+          // Don't block login if activity logging fails
+        }
         
         toast({
           title: "Login successful",

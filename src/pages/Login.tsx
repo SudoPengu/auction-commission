@@ -5,10 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, Info } from 'lucide-react';
 import Logo from '../components/Logo';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from "@/components/ui/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -22,19 +23,28 @@ const Login: React.FC = () => {
     if (!email.trim() || !password.trim()) return;
     
     setIsSubmitting(true);
-    const success = await login(email, password);
-    
-    if (success) {
-      navigate('/dashboard');
-    } else {
+    try {
+      const success = await login(email, password);
+      
+      if (success) {
+        navigate('/dashboard');
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description: "Invalid credentials or your account may not be set up in the system.",
+        });
+      }
+    } catch (error) {
+      console.error('Login error:', error);
       toast({
         variant: "destructive",
-        title: "Access Denied",
-        description: "Invalid credentials or your account is not authorized",
+        title: "Login Error",
+        description: "An unexpected error occurred. Please try again.",
       });
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setIsSubmitting(false);
   };
 
   return (
@@ -50,6 +60,15 @@ const Login: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 p-6">
+          <Alert variant="default" className="bg-blue-50 mb-4">
+            <Info className="h-4 w-4" />
+            <AlertTitle>Important Note</AlertTitle>
+            <AlertDescription>
+              These test accounts must be created in your Supabase database first. 
+              Please refer to Supabase authentication documentation for adding these users.
+            </AlertDescription>
+          </Alert>
+          
           <form onSubmit={handleLoginSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -100,9 +119,9 @@ const Login: React.FC = () => {
 
           <div className="border p-4 rounded-md bg-muted/30 text-sm">
             <h3 className="font-semibold mb-2">Test Account Credentials:</h3>
-            <p><strong>Staff account:</strong> staff@bluesky.com / password123</p>
-            <p><strong>Admin account:</strong> admin@bluesky.com / password123</p>
-            <p><strong>Super Admin:</strong> superadmin@bluesky.com / password123</p>
+            <p><strong>Staff account:</strong> staff@bluesky.com / staff123</p>
+            <p><strong>Admin account:</strong> admin@bluesky.com / admin123</p>
+            <p><strong>Super Admin:</strong> superadmin@bluesky.com / superadmin123</p>
           </div>
         </CardContent>
       </Card>
