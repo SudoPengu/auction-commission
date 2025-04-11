@@ -13,7 +13,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
-  const { user } = useAuth();
+  const { profile } = useAuth();
   
   // Define navigation items based on user role
   const navItems = [
@@ -21,7 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       name: 'Dashboard',
       icon: Home,
       path: '/dashboard',
-      roles: ['staff', 'admin', 'super-admin']
+      roles: ['staff', 'admin', 'super-admin', 'auction-manager']
     },
     {
       name: 'POS',
@@ -51,7 +51,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
 
   // Filter items based on user role
   const filteredNavItems = navItems.filter(item => 
-    user && item.roles.includes(user.role)
+    profile && item.roles.includes(profile.role)
   );
 
   return (

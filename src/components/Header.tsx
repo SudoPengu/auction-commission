@@ -19,7 +19,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
-  const { user, logout } = useAuth();
+  const { profile, logout } = useAuth();
 
   return (
     <header className="h-16 bg-white border-b border-border flex items-center px-4 justify-between">
@@ -59,11 +59,11 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {user && (
+            {profile && (
               <>
                 <div className="px-2 py-1.5 text-sm">
-                  <div className="font-medium">{user.name}</div>
-                  <div className="text-xs text-muted-foreground capitalize">{user.role}</div>
+                  <div className="font-medium">{profile.full_name}</div>
+                  <div className="text-xs text-muted-foreground capitalize">{profile.role}</div>
                 </div>
                 <DropdownMenuSeparator />
               </>

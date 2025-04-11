@@ -4,79 +4,50 @@ import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { User, Shield, ShieldCheck } from 'lucide-react';
+import { User, Shield, ShieldCheck, Mail, Lock } from 'lucide-react';
 import Logo from '../components/Logo';
 import { useAuth } from '../contexts/AuthContext';
-
-type ProfileType = 'admin' | 'staff' | null;
+import { UserRole } from '../contexts/AuthContext';
 
 const Login: React.FC = () => {
-  const [selectedProfile, setSelectedProfile] = useState<ProfileType>(null);
-  const [code, setCode] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCodeDialogOpen, setIsCodeDialogOpen] = useState(false);
-  const { login } = useAuth();
+  const [activeTab, setActiveTab] = useState('login');
+  const { login, signup } = useAuth();
   const navigate = useNavigate();
 
-  const handleProfileSelect = (profileType: ProfileType) => {
-    setSelectedProfile(profileType);
-    setIsCodeDialogOpen(true);
-  };
-
-  const handleCodeSubmit = async (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!code.trim()) return;
+    if (!email.trim() || !password.trim()) return;
     
     setIsSubmitting(true);
-    const success = await login(code);
+    const success = await login(email, password);
     
     if (success) {
-      setIsCodeDialogOpen(false);
-      setCode('');
       navigate('/dashboard');
     }
     
     setIsSubmitting(false);
   };
 
-  const closeDialog = () => {
-    setIsCodeDialogOpen(false);
-    setCode('');
+  const handleSignupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !password.trim() || !fullName.trim()) return;
+    
+    setIsSubmitting(true);
+    const success = await signup(email, password, fullName);
+    
+    if (success) {
+      setActiveTab('login');
+    }
+    
+    setIsSubmitting(false);
   };
-
-  const ProfileCard = ({ 
-    type, 
-    title, 
-    icon, 
-    description 
-  }: { 
-    type: ProfileType, 
-    title: string, 
-    icon: React.ReactNode, 
-    description: string 
-  }) => (
-    <div 
-      className="cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
-      onClick={() => handleProfileSelect(type)}
-    >
-      <Card className="w-full">
-        <CardHeader className="pb-2 text-center">
-          <div className="mx-auto mb-2 bg-secondary rounded-full p-3 w-16 h-16 flex items-center justify-center">
-            {icon}
-          </div>
-          <CardTitle className="text-xl">{title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CardDescription className="text-center">
-            {description}
-          </CardDescription>
-        </CardContent>
-      </Card>
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -85,73 +56,112 @@ const Login: React.FC = () => {
           <div className="mx-auto">
             <Logo size="large" />
           </div>
-          <CardTitle className="text-2xl">Select Profile</CardTitle>
+          <CardTitle className="text-2xl">BlueSky Inc.</CardTitle>
           <CardDescription>
-            Choose a profile to access the system
+            Sign in to access the system
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <ProfileCard 
-              type="admin"
-              title="Admin"
-              icon={<ShieldCheck className="h-8 w-8 text-primary" />}
-              description="Administrator access with full system controls"
-            />
-            <ProfileCard 
-              type="staff"
-              title="Staff"
-              icon={<User className="h-8 w-8 text-primary" />}
-              description="Standard staff access for daily operations"
-            />
-          </div>
+          <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login">Login</TabsTrigger>
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="login" className="mt-4">
+              <form onSubmit={handleLoginSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Logging in...' : 'Login'}
+                </Button>
+              </form>
+            </TabsContent>
+            
+            <TabsContent value="signup" className="mt-4">
+              <form onSubmit={handleSignupSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    placeholder="Enter your full name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">Email</Label>
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Password</Label>
+                  <Input
+                    id="signup-password"
+                    type="password"
+                    placeholder="Create a password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Creating Account...' : 'Create Account'}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
-
-      <Dialog open={isCodeDialogOpen} onOpenChange={setIsCodeDialogOpen}>
-        <DialogContent className="sm:max-w-md backdrop-blur-sm bg-background/95">
-          <DialogHeader>
-            <DialogTitle className="text-xl text-center">
-              {selectedProfile === 'admin'
-                ? 'Enter Admin Access Code'
-                : 'Enter Staff Access Code'}
-            </DialogTitle>
-            <DialogDescription className="text-center">
-              Please enter your access code to continue
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleCodeSubmit} className="space-y-4">
-            <div className="space-y-2 py-4">
-              <Input
-                id="code"
-                type="password"
-                placeholder="Enter your access code"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                className="text-center text-lg py-6"
-                autoComplete="off"
-                autoFocus
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button 
-                variant="outline" 
-                onClick={closeDialog}
-                type="button"
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                className="bluesky-gradient"
-                disabled={isSubmitting || !code.trim()}
-              >
-                {isSubmitting ? 'Logging in...' : 'Login'}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

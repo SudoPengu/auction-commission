@@ -18,7 +18,7 @@ const queryClient = new QueryClient();
 
 // Separate ProtectedRoute component to prevent rendering loops
 const ProtectedRoute = ({ children, allowedRoles = ['staff', 'admin', 'super-admin'] }) => {
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated, profile, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -32,7 +32,7 @@ const ProtectedRoute = ({ children, allowedRoles = ['staff', 'admin', 'super-adm
     return <Navigate to="/login" replace />;
   }
 
-  if (user && !allowedRoles.includes(user.role)) {
+  if (profile && !allowedRoles.includes(profile.role)) {
     return <Navigate to="/login" replace />;
   }
 
