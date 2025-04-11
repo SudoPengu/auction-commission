@@ -11,13 +11,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   allowedRoles = ['staff', 'admin', 'super-admin']
 }) => {
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated, profile, isLoading } = useAuth();
 
   // If still loading, show a simple loading indicator
   if (isLoading) {
     return (
       <div className="h-screen w-full flex items-center justify-center">
-        <div className="animate-pulse text-bluesky-500 text-lg">Loading...</div>
+        <div className="animate-pulse text-lg">Loading...</div>
       </div>
     );
   }
@@ -28,8 +28,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // If authenticated but not allowed for this route, redirect to unauthorized
-  if (user && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/unauthorized" replace />;
+  if (profile && !allowedRoles.includes(profile.role)) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   // Otherwise render the protected content
