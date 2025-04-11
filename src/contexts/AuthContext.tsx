@@ -24,7 +24,6 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  signup: (email: string, password: string, fullName: string, role?: UserRole) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -150,79 +149,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Signup function
-  const signup = async (
-    email: string, 
-    password: string, 
-    fullName: string,
-    role: UserRole = 'staff'
-  ): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      // Create the user in auth
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            role: role
-          }
-        }
-      });
-
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "Signup failed",
-          description: error.message,
-        });
-        setIsLoading(false);
-        return false;
-      }
-
-      if (data.user) {
-        // Create user profile
-        const { error: profileError } = await supabase
-          .from('user_profiles')
-          .insert({
-            id: data.user.id,
-            full_name: fullName,
-            email: email,
-            role: role
-          });
-
-        if (profileError) {
-          console.error("Error creating profile:", profileError);
-          toast({
-            variant: "destructive",
-            title: "Profile creation failed",
-            description: "Your account was created but profile setup failed. Please contact support.",
-          });
-        } else {
-          toast({
-            title: "Signup successful",
-            description: "Your account has been created successfully!",
-          });
-        }
-        
-        return true;
-      }
-      
-      return false;
-    } catch (error) {
-      console.error("Signup error:", error);
-      toast({
-        variant: "destructive",
-        title: "Signup error",
-        description: "An unexpected error occurred. Please try again.",
-      });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Logout function
   const logout = async () => {
     try {
@@ -250,7 +176,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!user && !!profile, 
         isLoading, 
         login, 
-        signup, 
         logout 
       }}
     >

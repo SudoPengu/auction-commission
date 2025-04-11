@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AuthProvider, useAuth, UserRole } from "./contexts/AuthContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
@@ -13,31 +13,9 @@ import Analytics from "./pages/Analytics";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
-
-// Separate ProtectedRoute component to prevent rendering loops
-const ProtectedRoute = ({ children, allowedRoles = ['staff', 'admin', 'super-admin'] }) => {
-  const { isAuthenticated, profile, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="h-screen w-full flex items-center justify-center">
-        <div className="animate-pulse text-lg">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (profile && !allowedRoles.includes(profile.role)) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <>{children}</>;
-};
 
 // Separated routes component to avoid nesting inside App
 const AppRoutes = () => {
@@ -47,22 +25,26 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" replace />} />
       
-      <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+      <Route element={
+        <ProtectedRoute allowedRoles={['staff', 'admin', 'super-admin'] as UserRole[]}>
+          <Layout />
+        </ProtectedRoute>
+      }>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/pos" element={<POS />} />
         <Route path="/analytics" element={
-          <ProtectedRoute allowedRoles={['admin', 'super-admin']}>
+          <ProtectedRoute allowedRoles={['admin', 'super-admin'] as UserRole[]}>
             <Analytics />
           </ProtectedRoute>
         } />
         <Route path="/users" element={
-          <ProtectedRoute allowedRoles={['admin', 'super-admin']}>
+          <ProtectedRoute allowedRoles={['admin', 'super-admin'] as UserRole[]}>
             <Users />
           </ProtectedRoute>
         } />
         <Route path="/settings" element={
-          <ProtectedRoute allowedRoles={['admin', 'super-admin']}>
+          <ProtectedRoute allowedRoles={['admin', 'super-admin'] as UserRole[]}>
             <Settings />
           </ProtectedRoute>
         } />
