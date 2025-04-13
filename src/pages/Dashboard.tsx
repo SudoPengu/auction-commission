@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { BarChart, LineChart, PieChart } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from "@/components/ui/use-toast";
+import POS from './POS';
 
 type TimeFrame = '1D' | '1W' | '1M' | '3M' | '1Y';
 
@@ -47,6 +48,9 @@ const Dashboard: React.FC = () => {
           </p>
         </div>
       </div>
+      
+      {/* POS Floating Panel */}
+      <POS />
       
       {canViewAnalytics ? (
         <>
@@ -160,21 +164,7 @@ const Dashboard: React.FC = () => {
           </Tabs>
         </>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>POS System</CardTitle>
-              <CardDescription>
-                Process sales and manage inventory
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="h-[200px] flex items-center justify-center">
-              <Button className="bg-primary hover:bg-primary/90" onClick={() => window.location.href = '/pos'}>
-                Open POS
-              </Button>
-            </CardContent>
-          </Card>
-          
+        <div className="grid gap-4 md:grid-cols-1">
           <Card>
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
