@@ -6,44 +6,47 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Minus, Trash2, QrCode, Search, ChevronRight, ChevronLeft } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const POS: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const isMobile = useIsMobile();
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
   };
 
   return (
-    <div className={`fixed top-16 right-0 bottom-0 z-30 transition-all duration-300 ease-in-out bg-background border-l border-border shadow-lg ${isCollapsed ? 'w-12' : 'w-[450px]'}`}>
-      {/* Collapse toggle button */}
+    <div 
+      className={`fixed top-16 right-0 bottom-0 z-30 transition-all duration-300 ease-in-out bg-background border-l border-border shadow-lg 
+      ${isCollapsed ? 'w-12' : (isMobile ? 'w-full sm:w-[350px]' : 'w-[450px]')}`}
+    >
+      {/* Collapse toggle button for desktop */}
       <Button 
         variant="ghost" 
         size="icon" 
-        className="absolute -left-10 top-1/2 transform -translate-y-1/2 bg-background border border-border shadow-md"
+        className="absolute -left-10 top-1/2 transform -translate-y-1/2 bg-background border border-border shadow-md hidden md:flex"
         onClick={toggleCollapse}
       >
         {isCollapsed ? <ChevronLeft /> : <ChevronRight />}
       </Button>
 
       {isCollapsed ? (
-        // Collapsed View
-        <div className="h-full flex flex-col items-center pt-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={toggleCollapse}
-            className="rotate-90 mb-4"
-          >
-            <span className="font-bold">POS</span>
-          </Button>
+        // Collapsed View - Make entire bar clickable
+        <div 
+          className="h-full flex flex-col items-center pt-4 cursor-pointer"
+          onClick={toggleCollapse}
+        >
+          <div className="rotate-0 mb-4 w-full text-center">
+            <span className="font-bold text-xs writing-mode-vertical">POS</span>
+          </div>
         </div>
       ) : (
         // Expanded View
         <div className="flex flex-col h-full overflow-hidden">
           <div className="flex justify-between items-center p-4 border-b">
             <h2 className="text-lg font-bold">Point of Sale</h2>
-            <Button variant="ghost" size="icon" onClick={toggleCollapse}>
+            <Button variant="ghost" size="icon" onClick={toggleCollapse} className="md:hidden">
               <ChevronRight />
             </Button>
           </div>
