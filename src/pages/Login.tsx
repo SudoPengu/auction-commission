@@ -10,8 +10,16 @@ import Logo from '../components/Logo';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from "@/components/ui/use-toast";
 
+// Map of usernames to their full email addresses
+const USER_EMAIL_MAP: Record<string, string> = {
+  'admin0': 'admin@bluesky.com',
+  'staff0': 'staff@bluesky.com',
+  'superadmin': 'superadmin@bluesky.com',
+  'manager': 'auctionmanager@bluesky.com',
+};
+
 const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, isAuthenticated } = useAuth();
@@ -28,12 +36,19 @@ const Login: React.FC = () => {
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) return;
+    if (!identifier.trim() || !password.trim()) return;
     
     setIsSubmitting(true);
     try {
-      console.log("Attempting login with:", email);
-      const success = await login(email, password);
+      console.log("Attempting login with identifier:", identifier);
+      
+      // Determine if the input is a username or an email
+      const loginEmail = USER_EMAIL_MAP[identifier] || identifier;
+      
+      // Log the mapped email for debugging
+      console.log("Using email for login:", loginEmail);
+      
+      const success = await login(loginEmail, password);
       
       if (success) {
         console.log("Login successful, navigating to dashboard");
@@ -70,15 +85,15 @@ const Login: React.FC = () => {
         <CardContent className="space-y-4 p-6">
           <form onSubmit={handleLoginSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="identifier">Username or Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="identifier"
+                  type="text"
+                  placeholder="Enter your username or email"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   className="pl-10"
                   required
                 />
