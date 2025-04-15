@@ -54,6 +54,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     profile && item.roles.includes(profile.role)
   );
 
+  // Helper function to check if a path is active (including partial matches)
+  const isPathActive = (path: string) => {
+    // Exact match
+    if (location.pathname === path) return true;
+    
+    // Check if current path starts with the nav item path (for nested routes)
+    // Only apply this logic for non-root paths to avoid matching everything
+    if (path !== '/' && location.pathname.startsWith(path)) return true;
+    
+    return false;
+  };
+
   return (
     <>
       {/* Overlay for mobile */}
@@ -93,7 +105,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                   to={item.path}
                   className={`
                     flex items-center px-3 py-2 rounded-md transition-colors
-                    ${location.pathname === item.path 
+                    ${isPathActive(item.path) 
                       ? 'bg-sidebar-primary text-sidebar-primary-foreground'
                       : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                     }
