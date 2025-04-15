@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, ShoppingCart, BarChart3, Users, Settings, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Package2, Users, BarChart3, Settings, Menu, X } from 'lucide-react';
 import Logo from './Logo';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -19,15 +19,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const navItems = [
     {
       name: 'Dashboard',
-      icon: Home,
+      icon: LayoutDashboard,
       path: '/dashboard',
       roles: ['staff', 'admin', 'super-admin', 'auction-manager']
     },
     {
-      name: 'POS',
-      icon: ShoppingCart,
-      path: '/pos',
-      roles: ['staff', 'admin', 'super-admin']
+      name: 'Inventory',
+      icon: Package2,
+      path: '/inventory',
+      roles: ['admin', 'super-admin']
     },
     {
       name: 'Analytics',
@@ -39,7 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       name: 'Users',
       icon: Users,
       path: '/users',
-      roles: ['admin', 'super-admin']
+      roles: ['super-admin']
     },
     {
       name: 'Settings',
