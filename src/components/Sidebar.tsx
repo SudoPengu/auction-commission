@@ -1,7 +1,17 @@
 
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package2, Users, BarChart3, Settings, Menu, X, LogOut } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  Package2, 
+  Users, 
+  BarChart3, 
+  Settings, 
+  Menu, 
+  X, 
+  LogOut,
+  ShoppingCart 
+} from 'lucide-react';
 import Logo from './Logo';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -26,6 +36,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       icon: LayoutDashboard,
       path: '/dashboard',
       roles: ['staff', 'admin', 'super-admin', 'auction-manager']
+    },
+    {
+      name: 'POS',
+      icon: ShoppingCart,
+      path: '/pos',
+      roles: ['staff', 'admin', 'super-admin']
     },
     {
       name: 'Inventory',

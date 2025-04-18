@@ -23,8 +23,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (!isAuthenticated) {
       console.log("Not authenticated in Layout, redirecting to login");
       navigate('/login');
-    } else {
-      // Show welcome toast when authenticated
+      return;
+    }
+    
+    // Show welcome toast when authenticated and not on login page
+    if (isAuthenticated && location.pathname !== '/login') {
       toast({
         title: "Welcome back!",
         description: `Logged in as ${profile?.full_name || 'User'}`,
@@ -38,9 +41,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   // If not authenticated, don't render anything (redirect will happen in useEffect)
   if (!isAuthenticated) {
+    console.log("Not rendering Layout because user is not authenticated");
     return null;
   }
 
+  console.log("Rendering Layout with sidebar and content");
+  
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
