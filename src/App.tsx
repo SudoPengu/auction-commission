@@ -14,6 +14,7 @@ import Users from "./pages/Users";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { useEffect } from "react";
 
 const queryClient = new QueryClient();
 
@@ -21,7 +22,9 @@ const queryClient = new QueryClient();
 const AppRoutes = () => {
   const { isAuthenticated, isLoading } = useAuth();
   
-  console.log("AppRoutes rendering - Auth state:", { isAuthenticated, isLoading });
+  useEffect(() => {
+    console.log("AppRoutes rendering - Auth state:", { isAuthenticated, isLoading, currentPath: window.location.pathname });
+  }, [isAuthenticated, isLoading]);
   
   // If auth is still loading, show a simple spinner
   if (isLoading) {
@@ -50,13 +53,23 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } />
         <Route path="/users" element={
-          <ProtectedRoute allowedRoles={['admin', 'super-admin'] as UserRole[]}>
+          <ProtectedRoute allowedRoles={['super-admin'] as UserRole[]}>
             <Layout><Users /></Layout>
           </ProtectedRoute>
         } />
         <Route path="/settings" element={
           <ProtectedRoute allowedRoles={['admin', 'super-admin'] as UserRole[]}>
             <Layout><Settings /></Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/inventory" element={
+          <ProtectedRoute allowedRoles={['admin', 'super-admin'] as UserRole[]}>
+            <Layout>
+              <div className="space-y-6">
+                <h1 className="text-3xl font-bold">Inventory Management</h1>
+                <p>Inventory functionality will be implemented here.</p>
+              </div>
+            </Layout>
           </ProtectedRoute>
         } />
       </Route>

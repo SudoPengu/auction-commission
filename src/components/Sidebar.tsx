@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package2, Users, BarChart3, Settings, Menu, X } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Package2, Users, BarChart3, Settings, Menu, X, LogOut } from 'lucide-react';
 import Logo from './Logo';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { toast } from "@/components/ui/use-toast";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -13,7 +14,10 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
-  const { profile } = useAuth();
+  const navigate = useNavigate();
+  const { profile, logout } = useAuth();
+  
+  console.log("Sidebar rendering, current path:", location.pathname);
   
   // Define navigation items based on user role
   const navItems = [
@@ -66,6 +70,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     return false;
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out"
+      });
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to log out. Please try again."
+      });
+    }
+  };
+
   return (
     <>
       {/* Overlay for mobile */}
@@ -110,12 +132,29 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                       : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                     }
                   `}
+                  onClick={() => {
+                    console.log(`Navigating to ${item.path}`);
+                    if (window.innerWidth < 1024) {
+                      toggleSidebar();
+                    }
+                  }}
                 >
                   <item.icon className="w-5 h-5 mr-3" />
                   <span>{item.name}</span>
                 </Link>
               </li>
             ))}
+            
+            {/* Logout button at the bottom */}
+            <li className="mt-8">
+              <button
+                onClick={handleLogout}
+                className="flex items-center w-full px-3 py-2 rounded-md transition-colors text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              >
+                <LogOut className="w-5 h-5 mr-3" />
+                <span>Logout</span>
+              </button>
+            </li>
           </ul>
         </div>
       </aside>

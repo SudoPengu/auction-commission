@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import { useAuth } from '../contexts/AuthContext';
+import { toast } from "@/components/ui/use-toast";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,16 +14,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isAuthenticated, profile } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   
   useEffect(() => {
-    console.log("Layout mounted, auth state:", { isAuthenticated, profileRole: profile?.role });
+    console.log("Layout mounted, auth state:", { isAuthenticated, profileRole: profile?.role, currentPath: location.pathname });
     
     // Redirect to login if not authenticated
     if (!isAuthenticated) {
       console.log("Not authenticated in Layout, redirecting to login");
       navigate('/login');
+    } else {
+      // Show welcome toast when authenticated
+      toast({
+        title: "Welcome back!",
+        description: `Logged in as ${profile?.full_name || 'User'}`,
+      });
     }
-  }, [isAuthenticated, profile, navigate]);
+  }, [isAuthenticated, profile, navigate, location.pathname]);
   
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
