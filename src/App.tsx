@@ -15,6 +15,9 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useEffect } from "react";
+import QRScanner from "./pages/QRScanner";
+import AuctionEvents from "./pages/AuctionEvents";
+import BidderProfiles from "./pages/BidderProfiles";
 
 const queryClient = new QueryClient();
 
@@ -44,7 +47,10 @@ const AppRoutes = () => {
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-        <Route path="/pos" element={<Layout><POS /></Layout>} />
+        <Route path="/pos" element={<Layout><Dashboard /></Layout>} />
+        <Route path="/qr-scanner" element={<Layout><QRScanner /></Layout>} />
+        <Route path="/auction-events" element={<Layout><AuctionEvents /></Layout>} />
+        <Route path="/bidder-profiles" element={<Layout><BidderProfiles /></Layout>} />
         
         {/* Admin only routes */}
         <Route path="/analytics" element={
@@ -53,7 +59,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } />
         <Route path="/users" element={
-          <ProtectedRoute allowedRoles={['super-admin'] as UserRole[]}>
+          <ProtectedRoute allowedRoles={['admin', 'super-admin'] as UserRole[]}>
             <Layout><Users /></Layout>
           </ProtectedRoute>
         } />

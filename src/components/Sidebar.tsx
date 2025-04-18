@@ -10,7 +10,10 @@ import {
   Menu, 
   X, 
   LogOut,
-  ShoppingCart 
+  ShoppingCart,
+  QrCode,
+  CalendarDays,
+  UserCircle
 } from 'lucide-react';
 import Logo from './Logo';
 import { useAuth } from '../contexts/AuthContext';
@@ -42,7 +45,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       name: 'POS',
       icon: ShoppingCart,
       path: '/pos',
-      roles: ['staff', 'admin', 'super-admin']
+      roles: ['staff', 'admin', 'super-admin', 'auction-manager']
+    },
+    {
+      name: 'QR Scanner',
+      icon: QrCode,
+      path: '/qr-scanner',
+      roles: ['staff', 'admin', 'super-admin', 'auction-manager']
+    },
+    {
+      name: 'Auction Events',
+      icon: CalendarDays,
+      path: '/auction-events',
+      roles: ['staff', 'admin', 'super-admin', 'auction-manager']
+    },
+    {
+      name: 'Bidder Profiles',
+      icon: UserCircle,
+      path: '/bidder-profiles',
+      roles: ['staff', 'admin', 'super-admin', 'auction-manager']
     },
     {
       name: 'Inventory',
@@ -60,7 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       name: 'Users',
       icon: Users,
       path: '/users',
-      roles: ['super-admin']
+      roles: ['super-admin', 'admin']
     },
     {
       name: 'Settings',
@@ -105,6 +126,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     }
   };
 
+  // Special handling for POS - to focus the floating POS panel when clicked
+  const handleNavClick = (path: string) => {
+    console.log(`Navigating to ${path}`);
+    
+    if (path === '/pos' && location.pathname === '/dashboard') {
+      // Just toggle the POS focus state without navigating, since POS is already visible on dashboard
+      // We'll implement the actual focus functionality next
+      console.log("POS button clicked while on dashboard - focusing POS panel");
+      const event = new CustomEvent('focus-pos-panel');
+      window.dispatchEvent(event);
+    } else {
+      // Normal navigation for other routes
+      navigate(path);
+    }
+    
+    // Close sidebar on mobile after navigation
+    if (window.innerWidth < 1024) {
+      toggleSidebar();
+    }
+  };
+
   return (
     <>
       {/* Overlay for mobile */}
@@ -140,25 +182,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
           <ul className="space-y-2 flex-1">
             {filteredNavItems.map((item) => (
               <li key={item.name}>
-                <Link
-                  to={item.path}
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavClick(item.path);
+                  }}
                   className={`
-                    flex items-center px-3 py-2 rounded-md transition-colors
+                    flex items-center px-3 py-2 rounded-md transition-colors cursor-pointer
                     ${isPathActive(item.path) 
                       ? 'bg-sidebar-primary text-sidebar-primary-foreground font-medium'
                       : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                     }
                   `}
-                  onClick={() => {
-                    console.log(`Navigating to ${item.path}`);
-                    if (window.innerWidth < 1024) {
-                      toggleSidebar();
-                    }
-                  }}
                 >
                   <item.icon className="w-5 h-5 mr-3" />
                   <span>{item.name}</span>
-                </Link>
+                </a>
               </li>
             ))}
           </ul>

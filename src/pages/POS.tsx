@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,25 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 const POS: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    // Listen for focus event from sidebar
+    const handleFocusEvent = () => {
+      console.log("POS focus event received");
+      setIsCollapsed(false);
+      setIsFocused(true);
+      // Reset focus after a delay for UI effect
+      setTimeout(() => setIsFocused(false), 800);
+    };
+
+    window.addEventListener('focus-pos-panel', handleFocusEvent);
+    
+    return () => {
+      window.removeEventListener('focus-pos-panel', handleFocusEvent);
+    };
+  }, []);
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -19,7 +37,8 @@ const POS: React.FC = () => {
   return (
     <div 
       className={`fixed top-16 right-0 bottom-0 z-30 transition-all duration-300 ease-in-out bg-background border-l border-border shadow-lg 
-      ${isCollapsed ? 'w-12' : (isMobile ? 'w-full sm:w-[350px]' : 'w-[450px]')}`}
+      ${isCollapsed ? 'w-12' : (isMobile ? 'w-full sm:w-[350px]' : 'w-[450px]')}
+      ${isFocused ? 'ring-2 ring-primary ring-opacity-70' : ''}`}
     >
       {/* Collapse toggle button for desktop */}
       <Button 
