@@ -36,6 +36,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [isAuthenticated, profile, navigate, location.pathname]);
   
   const toggleSidebar = () => {
+    console.log("Toggling sidebar, current state:", sidebarOpen);
     setSidebarOpen(!sidebarOpen);
   };
 
@@ -45,7 +46,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return null;
   }
 
-  console.log("Rendering Layout with sidebar and content");
+  console.log("Rendering Layout with sidebar and content, sidebar state:", sidebarOpen);
   
   return (
     <div className="min-h-screen bg-background flex">

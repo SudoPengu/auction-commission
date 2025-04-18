@@ -28,6 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const { profile, logout } = useAuth();
   
   console.log("Sidebar rendering, current path:", location.pathname);
+  console.log("Sidebar state:", { isOpen, profile });
   
   // Define navigation items based on user role
   const navItems = [
@@ -69,10 +70,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     }
   ];
 
-  // Filter items based on user role
-  const filteredNavItems = navItems.filter(item => 
-    profile && item.roles.includes(profile.role)
-  );
+  // Filter items based on user role - if profile is null, show all for development
+  const filteredNavItems = profile 
+    ? navItems.filter(item => item.roles.includes(profile.role))
+    : navItems;
 
   // Helper function to check if a path is active (including partial matches)
   const isPathActive = (path: string) => {
@@ -135,8 +136,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         </div>
         
         {/* Sidebar content */}
-        <div className="py-4 px-3">
-          <ul className="space-y-2">
+        <div className="py-4 px-3 flex flex-col h-[calc(100%-4rem)]">
+          <ul className="space-y-2 flex-1">
             {filteredNavItems.map((item) => (
               <li key={item.name}>
                 <Link
@@ -144,7 +145,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                   className={`
                     flex items-center px-3 py-2 rounded-md transition-colors
                     ${isPathActive(item.path) 
-                      ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                      ? 'bg-sidebar-primary text-sidebar-primary-foreground font-medium'
                       : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                     }
                   `}
@@ -160,18 +161,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                 </Link>
               </li>
             ))}
-            
-            {/* Logout button at the bottom */}
-            <li className="mt-8">
-              <button
-                onClick={handleLogout}
-                className="flex items-center w-full px-3 py-2 rounded-md transition-colors text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              >
-                <LogOut className="w-5 h-5 mr-3" />
-                <span>Logout</span>
-              </button>
-            </li>
           </ul>
+          
+          {/* Logout button at the bottom */}
+          <div className="mt-auto pt-4 border-t border-sidebar-border">
+            <button
+              onClick={handleLogout}
+              className="flex items-center w-full px-3 py-2 rounded-md transition-colors text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            >
+              <LogOut className="w-5 h-5 mr-3" />
+              <span>Logout</span>
+            </button>
+          </div>
         </div>
       </aside>
     </>
