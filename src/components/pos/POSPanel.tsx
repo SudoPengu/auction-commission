@@ -1,0 +1,62 @@
+
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import POSContent from './POSContent';
+
+const POSPanel = () => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const isMobile = useIsMobile();
+
+  useEffect(() => {
+    const handleFocusEvent = () => {
+      console.log("POS focus event received");
+      setIsCollapsed(false);
+      setIsFocused(true);
+      setTimeout(() => setIsFocused(false), 800);
+    };
+
+    window.addEventListener('focus-pos-panel', handleFocusEvent);
+    return () => {
+      window.removeEventListener('focus-pos-panel', handleFocusEvent);
+    };
+  }, []);
+
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
+  return (
+    <div 
+      className={`fixed top-16 right-0 bottom-0 z-30 transition-all duration-300 ease-in-out bg-background border-l border-border shadow-lg 
+      ${isCollapsed ? 'w-12' : (isMobile ? 'w-full sm:w-[350px]' : 'w-[450px]')}
+      ${isFocused ? 'ring-2 ring-primary ring-opacity-70' : ''}`}
+    >
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        className="absolute -left-10 top-1/2 transform -translate-y-1/2 bg-background border border-border shadow-md hidden md:flex"
+        onClick={toggleCollapse}
+      >
+        {isCollapsed ? <ChevronLeft /> : <ChevronRight />}
+      </Button>
+
+      {isCollapsed ? (
+        <div 
+          className="h-full flex flex-col items-center pt-4 cursor-pointer"
+          onClick={toggleCollapse}
+        >
+          <div className="rotate-0 mb-4 w-full text-center">
+            <span className="font-bold text-xs writing-mode-vertical">POS</span>
+          </div>
+        </div>
+      ) : (
+        <POSContent onCollapse={toggleCollapse} />
+      )}
+    </div>
+  );
+};
+
+export default POSPanel;
