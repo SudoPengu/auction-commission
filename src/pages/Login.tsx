@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -15,14 +14,16 @@ const USER_EMAIL_MAP: Record<string, string> = {
   'admin0': 'admin@bluesky.com',
   'staff0': 'staff@bluesky.com',
   'superadmin': 'superadmin@bluesky.com',
-  'manager': 'auctionmanager@bluesky.com',
+  'manager': 'auctionmanager@bluesky.com'
 };
-
 const Login: React.FC = () => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login, isAuthenticated } = useAuth();
+  const {
+    login,
+    isAuthenticated
+  } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already authenticated
@@ -33,28 +34,24 @@ const Login: React.FC = () => {
       navigate('/dashboard');
     }
   }, [isAuthenticated, navigate]);
-
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!identifier.trim() || !password.trim()) return;
-    
     setIsSubmitting(true);
     try {
       console.log("Attempting login with identifier:", identifier);
-      
+
       // Determine if the input is a username or an email
       const loginEmail = USER_EMAIL_MAP[identifier] || identifier;
-      
+
       // Log the mapped email for debugging
       console.log("Using email for login:", loginEmail);
-      
       const success = await login(loginEmail, password);
-      
       if (success) {
         console.log("Login successful, navigating to dashboard");
         toast({
           title: "Login successful",
-          description: `Welcome back!`,
+          description: `Welcome back!`
         });
         navigate('/dashboard');
       }
@@ -63,21 +60,19 @@ const Login: React.FC = () => {
       toast({
         variant: "destructive",
         title: "Login Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: "An unexpected error occurred. Please try again."
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+  return <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4 text-center">
           <div className="mx-auto">
             <Logo size="large" />
           </div>
-          <CardTitle className="text-2xl">BlueSky Inc.</CardTitle>
+          <CardTitle className="text-2xl">Skyshier</CardTitle>
           <CardDescription>
             Sign in with your authorized account
           </CardDescription>
@@ -88,15 +83,7 @@ const Login: React.FC = () => {
               <Label htmlFor="identifier">Username or Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="identifier"
-                  type="text"
-                  placeholder="Enter your username or email"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  className="pl-10"
-                  required
-                />
+                <Input id="identifier" type="text" placeholder="Enter your username or email" value={identifier} onChange={e => setIdentifier(e.target.value)} className="pl-10" required />
               </div>
             </div>
             
@@ -104,23 +91,11 @@ const Login: React.FC = () => {
               <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                  required
-                />
+                <Input id="password" type="password" placeholder="Enter your password" value={password} onChange={e => setPassword(e.target.value)} className="pl-10" required />
               </div>
             </div>
             
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={isSubmitting}
-            >
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? 'Logging in...' : 'Login'}
             </Button>
           </form>
@@ -132,8 +107,6 @@ const Login: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default Login;
