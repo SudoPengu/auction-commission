@@ -66,7 +66,7 @@ const Login: React.FC = () => {
       setIsSubmitting(false);
     }
   };
-  return <div className="min-h-screen bg-background flex items-center justify-center p-4">
+  return <div className="min-h-screen flex items-center justify-center p-4 bg-sky-50">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4 text-center">
           <div className="mx-auto">
