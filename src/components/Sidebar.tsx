@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -81,7 +80,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       name: 'Users',
       icon: Users,
       path: '/users',
-      roles: ['super-admin', 'admin']
+      roles: ['admin', 'super-admin']
     },
     {
       name: 'Settings',
@@ -91,10 +90,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     }
   ];
 
-  // Filter items based on user role - if profile is null, show all for development
+  // Filter items based on user role - only show items the user has access to
   const filteredNavItems = profile 
     ? navItems.filter(item => item.roles.includes(profile.role))
-    : navItems;
+    : [];
 
   // Helper function to check if a path is active (including partial matches)
   const isPathActive = (path: string) => {
