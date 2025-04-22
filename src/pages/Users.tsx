@@ -11,10 +11,10 @@ import { Loader2, Save, User, Key } from 'lucide-react';
 
 // Map of emails to usernames for reference
 const EMAIL_TO_USERNAME_MAP: Record<string, string> = {
-  'admin@bluesky.com': 'admin0',
-  'staff@bluesky.com': 'staff0',
-  'superadmin@bluesky.com': 'superadmin',
-  'auctionmanager@bluesky.com': 'manager',
+  'blueskyincowner.0@outlook.com': 'admin0',
+  'blueskyincstaff.0@outlook.com': 'staff0',
+  'blueskyincsupera.0@outlook.com': 'superadmin',
+  'blueskyincmanager.0@outlook.com': 'manager0',
 };
 
 const Users: React.FC = () => {
