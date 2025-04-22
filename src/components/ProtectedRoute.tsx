@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -49,8 +50,18 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" replace />;
   }
 
+  // If authenticated but profile is not loaded yet, show loading
+  if (!profile) {
+    console.log("Authenticated but profile not loaded yet");
+    return (
+      <div className="h-screen w-full flex items-center justify-center">
+        <div className="animate-pulse text-lg">Loading profile...</div>
+      </div>
+    );
+  }
+
   // If authenticated but not allowed for this route, redirect to dashboard
-  if (profile && !allowedRoles.includes(profile.role)) {
+  if (!allowedRoles.includes(profile.role)) {
     console.log("Not authorized for this route, redirecting to dashboard");
     return <Navigate to="/dashboard" replace />;
   }

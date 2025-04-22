@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -38,7 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       name: 'Dashboard',
       icon: LayoutDashboard,
       path: '/dashboard',
-      roles: ['staff', 'admin', 'super-admin', 'auction-manager']
+      roles: ['staff', 'admin', 'super-admin', 'auction-manager', 'bidder']
     },
     {
       name: 'POS',
@@ -90,10 +91,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     }
   ];
 
-  // Filter items based on user role - only show items the user has access to
+  // Always include at least basic navigation items, even if profile is missing
+  // This ensures the sidebar is never empty
   const filteredNavItems = profile 
     ? navItems.filter(item => item.roles.includes(profile.role))
-    : [];
+    : navItems.filter(item => item.roles.includes('super-admin'));
 
   // Helper function to check if a path is active (including partial matches)
   const isPathActive = (path: string) => {
