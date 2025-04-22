@@ -1,51 +1,13 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
-import { Enums } from '@/integrations/supabase/types';
-
-// User role type from Supabase with additional bidder role
-// Extending the original type to include 'bidder' since it's not in the Supabase enum
-export type UserRole = Enums<'user_role'> | 'bidder';
-
-// User profile interface
-export interface UserProfile {
-  id: string;
-  full_name: string;
-  role: UserRole;
-  email: string;
-  phone_number?: string | null;
-}
-
-// Auth context interface - Added getRoleBasedLandingPage
-interface AuthContextType {
-  user: User | null;
-  profile: UserProfile | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
-  getRoleBasedLandingPage: (role: UserRole) => string; // Method to get landing page based on role
-}
+import { UserProfile, AuthContextType } from '@/types/auth';
+import { fetchUserProfile, getRoleBasedLandingPage, logLoginActivity } from '@/utils/authHelpers';
 
 // Create the auth context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Mock profile for development purposes
-const createMockProfile = (userId: string, email: string): UserProfile => {
-  // Extract role from email (admin@bluesky.com -> admin)
-  const role = email.split('@')[0].includes('admin') ? 'admin' 
-              : email.includes('super') ? 'super-admin'
-              : email.includes('bidder') ? 'bidder'
-              : 'staff';
-              
-  return {
-    id: userId,
-    full_name: email.split('@')[0],
-    role: role as UserRole,
-    email: email
-  };
-};
 
 // Provider component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -57,64 +19,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log("Auth state:", { user, profile, isAuthenticated: !!user, isLoading });
   }, [user, profile, isLoading]);
-
-  // Fetch user profile - with fallback to mock profile for development
-  const fetchUserProfile = async (userId: string) => {
-    console.log("Fetching profile for user ID:", userId);
-    try {
-      // First try to get from user_profiles (for staff, admin, etc.)
-      const { data: staffData, error: staffError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (staffData) {
-        console.log("Staff profile found:", staffData);
-        return staffData as UserProfile;
-      }
-
-      // If not found in user_profiles, check bidders table
-      if (staffError) {
-        console.log("No staff profile, checking bidder profile");
-        const { data: bidderData, error: bidderError } = await supabase
-          .from('bidders')
-          .select('id, full_name, email, phone_number')
-          .eq('id', userId)
-          .maybeSingle();
-
-        if (bidderData) {
-          console.log("Bidder profile found:", bidderData);
-          // Convert bidder data to UserProfile format
-          return {
-            id: bidderData.id,
-            full_name: bidderData.full_name,
-            email: bidderData.email,
-            phone_number: bidderData.phone_number,
-            role: 'bidder' as UserRole
-          };
-        }
-      }
-      
-      // Create a mock profile as fallback (only for development)
-      if (user?.email) {
-        console.log("No profile found, using mock profile for", user.email);
-        return createMockProfile(userId, user.email);
-      }
-      
-      console.log("No profile found for user ID:", userId);
-      return null;
-    } catch (error) {
-      console.error('Unexpected error fetching profile:', error);
-      
-      // Create a mock profile as fallback (only for development)
-      if (user?.email) {
-        console.log("Using mock profile after error for", user.email);
-        return createMockProfile(userId, user.email);
-      }
-      return null;
-    }
-  };
 
   // Authentication state listener
   useEffect(() => {
@@ -129,7 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // Use setTimeout to avoid potential deadlocks with Supabase client
           setTimeout(async () => {
-            const userProfile = await fetchUserProfile(session.user.id);
+            const userProfile = await fetchUserProfile(session.user.id, session.user.email);
             setProfile(userProfile);
             setIsLoading(false);
           }, 0);
@@ -147,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (session?.user) {
         setUser(session.user);
-        const userProfile = await fetchUserProfile(session.user.id);
+        const userProfile = await fetchUserProfile(session.user.id, session.user.email);
         setProfile(userProfile);
       }
       
@@ -176,23 +80,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           title: "Login failed",
           description: error.message,
         });
-        setIsLoading(false);
         return false;
       }
 
       if (data.user) {
         console.log("Authenticated user:", data.user.id);
-        try {
-          // Log activity
-          await supabase.rpc('log_activity', {
-            action: 'login',
-            resource: 'auth',
-            details: { method: 'email' }
-          });
-        } catch (err) {
-          console.error("Error logging activity:", err);
-          // Don't block login if activity logging fails
-        }
+        await logLoginActivity();
         
         // Fetch user profile
         const userProfile = await fetchUserProfile(data.user.id);
@@ -200,7 +93,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (!userProfile) {
           console.warn("Authentication successful but using fallback profile");
-          // We're using a mock profile now, so no need for this error toast
         }
         
         return true;
@@ -239,22 +131,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Implement getRoleBasedLandingPage method
-  const getRoleBasedLandingPage = (role: UserRole): string => {
-    switch (role) {
-      case 'super-admin':
-      case 'admin':
-      case 'staff':
-        return '/pos';
-      case 'auction-manager':
-        return '/auctions';
-      case 'bidder':
-        return '/auction-events';
-      default:
-        return '/dashboard';
-    }
-  };
-
   return (
     <AuthContext.Provider 
       value={{ 
@@ -264,7 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading, 
         login, 
         logout,
-        getRoleBasedLandingPage // Add the new method to the context
+        getRoleBasedLandingPage
       }}
     >
       {children}
