@@ -11,10 +11,10 @@ import { toast } from "@/components/ui/use-toast";
 
 // Map of usernames to their full email addresses
 const USER_EMAIL_MAP: Record<string, string> = {
-  'admin0': 'admin@bluesky.com',
-  'staff0': 'staff@bluesky.com',
-  'superadmin': 'superadmin@bluesky.com',
-  'manager': 'auctionmanager@bluesky.com'
+  'admin0': 'blueskyincowner.0@outlook.com',
+  'staff0': 'blueskyincstaff.0@outlook.com',
+  'superadmin': 'blueskyincsupera.0@outlook.com',
+  'manager0': 'blueskyincmanager.0@outlook.com'
 };
 const Login: React.FC = () => {
   const [identifier, setIdentifier] = useState('');
