@@ -19,7 +19,7 @@ const AuctionEvents: React.FC = () => {
       time: '3:00 PM - 6:00 PM',
       location: 'Main Gallery',
       status: 'Upcoming',
-      itemCount: 24,
+      itemCount: 241,
       registeredBidders: 12
     },
     {
@@ -29,7 +29,7 @@ const AuctionEvents: React.FC = () => {
       time: '1:00 PM - 5:00 PM',
       location: 'East Wing',
       status: 'Upcoming',
-      itemCount: 48,
+      itemCount: 148,
       registeredBidders: 30
     },
     {
@@ -39,7 +39,7 @@ const AuctionEvents: React.FC = () => {
       time: '2:00 PM - 4:00 PM',
       location: 'West Hall',
       status: 'Completed',
-      itemCount: 36,
+      itemCount: 236,
       registeredBidders: 28,
       totalSales: '$42,500'
     }
