@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
-  allowedRoles = ['staff', 'admin', 'super-admin']
+  allowedRoles = ['staff', 'admin', 'super-admin', 'bidder', 'auction-manager']
 }) => {
   const { isAuthenticated, profile, isLoading } = useAuth();
   const navigate = useNavigate();

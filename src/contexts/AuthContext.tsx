@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { Enums } from '@/integrations/supabase/types';
 
-// User role type from Supabase
-export type UserRole = Enums<'user_role'>;
+// User role type from Supabase with additional bidder role
+// Extending the original type to include 'bidder' since it's not in the Supabase enum
+export type UserRole = Enums<'user_role'> | 'bidder';
 
 // User profile interface
 export interface UserProfile {
@@ -24,7 +25,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  getRoleBasedLandingPage: (role: UserRole) => string; // New method
+  getRoleBasedLandingPage: (role: UserRole) => string; // Method to get landing page based on role
 }
 
 // Create the auth context
@@ -35,6 +36,7 @@ const createMockProfile = (userId: string, email: string): UserProfile => {
   // Extract role from email (admin@bluesky.com -> admin)
   const role = email.split('@')[0].includes('admin') ? 'admin' 
               : email.includes('super') ? 'super-admin'
+              : email.includes('bidder') ? 'bidder'
               : 'staff';
               
   return {
