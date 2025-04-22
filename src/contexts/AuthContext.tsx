@@ -16,7 +16,7 @@ export interface UserProfile {
   phone_number?: string | null;
 }
 
-// Auth context interface
+// Auth context interface - Added getRoleBasedLandingPage
 interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
@@ -24,6 +24,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  getRoleBasedLandingPage: (role: UserRole) => string; // New method
 }
 
 // Create the auth context
@@ -224,6 +225,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Implement getRoleBasedLandingPage method
+  const getRoleBasedLandingPage = (role: UserRole): string => {
+    switch (role) {
+      case 'super-admin':
+      case 'admin':
+      case 'staff':
+        return '/pos';
+      case 'auction-manager':
+        return '/auctions';
+      case 'bidder':
+        return '/auction-events';
+      default:
+        return '/dashboard';
+    }
+  };
+
   return (
     <AuthContext.Provider 
       value={{ 
@@ -232,7 +249,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!user, 
         isLoading, 
         login, 
-        logout 
+        logout,
+        getRoleBasedLandingPage // Add the new method to the context
       }}
     >
       {children}
