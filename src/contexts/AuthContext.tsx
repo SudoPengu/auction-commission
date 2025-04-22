@@ -62,26 +62,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchUserProfile = async (userId: string) => {
     console.log("Fetching profile for user ID:", userId);
     try {
-      const { data, error } = await supabase
+      // First try to get from user_profiles (for staff, admin, etc.)
+      const { data: staffData, error: staffError } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        
-        // Create a mock profile as fallback (only for development)
-        if (user?.email) {
-          console.log("Using mock profile for", user.email);
-          return createMockProfile(userId, user.email);
-        }
-        return null;
+      if (staffData) {
+        console.log("Staff profile found:", staffData);
+        return staffData as UserProfile;
       }
 
-      if (data) {
-        console.log("Profile found:", data);
-        return data as UserProfile;
+      // If not found in user_profiles, check bidders table
+      if (staffError) {
+        console.log("No staff profile, checking bidder profile");
+        const { data: bidderData, error: bidderError } = await supabase
+          .from('bidders')
+          .select('id, full_name, email, phone_number')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (bidderData) {
+          console.log("Bidder profile found:", bidderData);
+          // Convert bidder data to UserProfile format
+          return {
+            id: bidderData.id,
+            full_name: bidderData.full_name,
+            email: bidderData.email,
+            phone_number: bidderData.phone_number,
+            role: 'bidder' as UserRole
+          };
+        }
       }
       
       // Create a mock profile as fallback (only for development)
