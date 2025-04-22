@@ -47,22 +47,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       roles: ['staff', 'admin', 'super-admin', 'auction-manager']
     },
     {
-      name: 'QR Scanner',
-      icon: QrCode,
-      path: '/qr-scanner',
-      roles: ['staff', 'admin', 'super-admin', 'auction-manager']
-    },
-    {
-      name: 'Auction Events',
+      name: 'Live Auctions',
       icon: CalendarDays,
-      path: '/auction-events',
-      roles: ['staff', 'admin', 'super-admin', 'auction-manager']
+      path: '/auctions',
+      roles: ['staff', 'admin', 'super-admin', 'auction-manager', 'bidder']
     },
     {
-      name: 'Bidder Profiles',
+      name: 'My Bids',
+      icon: BarChart3,
+      path: '/my-bids',
+      roles: ['bidder']
+    },
+    {
+      name: 'Profile',
       icon: UserCircle,
-      path: '/bidder-profiles',
-      roles: ['staff', 'admin', 'super-admin', 'auction-manager']
+      path: '/profile',
+      roles: ['staff', 'admin', 'super-admin', 'auction-manager', 'bidder']
     },
     {
       name: 'Inventory',

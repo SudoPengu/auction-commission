@@ -8,6 +8,7 @@ import POSContent from './POSContent';
 const POSPanel = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [isFloating, setIsFloating] = useState(true); // New state for floating mode
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -30,9 +31,10 @@ const POSPanel = () => {
 
   return (
     <div 
-      className={`fixed top-16 right-0 bottom-0 z-30 transition-all duration-300 ease-in-out bg-background border-l border-border shadow-lg 
-      ${isCollapsed ? 'w-12' : (isMobile ? 'w-full sm:w-[350px]' : 'w-[450px]')}
-      ${isFocused ? 'ring-2 ring-primary ring-opacity-70' : ''}`}
+      className={`fixed transition-all duration-300 ease-in-out bg-background border-l border-border shadow-lg
+        ${isCollapsed ? 'w-12' : (isMobile ? 'w-full sm:w-[350px]' : 'w-[450px]')}
+        ${isFocused ? 'ring-2 ring-primary ring-opacity-70' : ''}
+        ${isFloating ? 'top-16 right-0 bottom-0 z-30' : 'relative w-full h-full'}`}
     >
       <Button 
         variant="ghost" 
@@ -41,6 +43,15 @@ const POSPanel = () => {
         onClick={toggleCollapse}
       >
         {isCollapsed ? <ChevronLeft /> : <ChevronRight />}
+      </Button>
+
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute right-4 top-4 md:hidden"
+        onClick={() => setIsFloating(!isFloating)}
+      >
+        {isFloating ? <ChevronRight /> : <ChevronLeft />}
       </Button>
 
       {isCollapsed ? (

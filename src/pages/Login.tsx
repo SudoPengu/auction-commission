@@ -14,15 +14,19 @@ const USER_EMAIL_MAP: Record<string, string> = {
   'admin0': 'blueskyincowner.0@outlook.com',
   'staff0': 'blueskyincstaff.0@outlook.com',
   'superadmin': 'blueskyincsupera.0@outlook.com',
-  'manager0': 'blueskyincmanager.0@outlook.com'
+  'manager0': 'blueskyincmanager.0@outlook.com',
+  'bidder0': 'blueskyincbidder.0@outlook.com'
 };
+
 const Login: React.FC = () => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const {
     login,
-    isAuthenticated
+    isAuthenticated,
+    profile,
+    getRoleBasedLandingPage
   } = useAuth();
   const navigate = useNavigate();
 
@@ -34,26 +38,23 @@ const Login: React.FC = () => {
       navigate('/dashboard');
     }
   }, [isAuthenticated, navigate]);
+
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!identifier.trim() || !password.trim()) return;
     setIsSubmitting(true);
     try {
-      console.log("Attempting login with identifier:", identifier);
-
-      // Determine if the input is a username or an email
       const loginEmail = USER_EMAIL_MAP[identifier] || identifier;
-
-      // Log the mapped email for debugging
-      console.log("Using email for login:", loginEmail);
       const success = await login(loginEmail, password);
+      
       if (success) {
-        console.log("Login successful, navigating to dashboard");
+        // Get role-based landing page
+        const landingPage = profile ? getRoleBasedLandingPage(profile.role) : '/dashboard';
         toast({
           title: "Login successful",
           description: `Welcome back!`
         });
-        navigate('/dashboard');
+        navigate(landingPage);
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -66,6 +67,7 @@ const Login: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
   return <div className="min-h-screen flex items-center justify-center p-4 bg-sky-50">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4 text-center">
@@ -109,4 +111,5 @@ const Login: React.FC = () => {
       </Card>
     </div>;
 };
+
 export default Login;
