@@ -1,6 +1,7 @@
 
 import { UserRole } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
+import { createMockProfile } from './mockProfile';
 
 export const fetchUserProfile = async (userId: string, userEmail?: string) => {
   console.log("Fetching profile for user ID:", userId);
