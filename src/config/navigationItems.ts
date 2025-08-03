@@ -58,7 +58,7 @@ export const navigationItems: NavItem[] = [
     name: 'Users',
     icon: Users,
     path: '/users',
-    roles: ['admin', 'super-admin']
+    roles: ['super-admin']
   },
   {
     name: 'Settings',
