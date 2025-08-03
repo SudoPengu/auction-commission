@@ -114,21 +114,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Logout function
   const logout = async () => {
+    console.log("Logout initiated");
+    
+    // Force state reset immediately - don't wait for Supabase
+    setUser(null);
+    setProfile(null);
+    setIsLoading(false);
+    
     try {
-      await supabase.auth.signOut();
+      // Clear all possible auth tokens from localStorage
       localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('sb-kfurwthocpxsvzgnsbgd-auth-token');
+      
+      // Check if session exists before attempting signOut
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        console.log("Active session found, signing out...");
+        await supabase.auth.signOut();
+      } else {
+        console.log("No active session, forcing local logout");
+      }
+      
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
     } catch (error) {
       console.error("Logout error:", error);
+      // Still show success message since we forced state reset
       toast({
-        variant: "destructive",
-        title: "Logout error",
-        description: "An error occurred during logout.",
+        title: "Logged out",
+        description: "You have been logged out locally.",
       });
     }
+    
+    console.log("Logout completed, state reset");
   };
 
   return (
