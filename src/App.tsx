@@ -17,8 +17,9 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useEffect } from "react";
 import QRScanner from "./pages/QRScanner";
-import AuctionEvents from "./pages/AuctionEvents";
+import LiveAuctions from "./pages/LiveAuctions";
 import BidderProfiles from "./pages/BidderProfiles";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -50,8 +51,9 @@ const AppRoutes = () => {
         <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
         <Route path="/pos" element={<Layout><Dashboard /></Layout>} />
         <Route path="/qr-scanner" element={<Layout><QRScanner /></Layout>} />
-        <Route path="/auction-events" element={<Layout><AuctionEvents /></Layout>} />
+        <Route path="/auctions" element={<Layout><LiveAuctions /></Layout>} />
         <Route path="/bidder-profiles" element={<Layout><BidderProfiles /></Layout>} />
+        <Route path="/profile" element={<Layout><Profile /></Layout>} />
         
         {/* Admin only routes */}
         <Route path="/analytics" element={

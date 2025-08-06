@@ -10,42 +10,155 @@ export type Database = {
   // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   public: {
     Tables: {
+      auction_entrance_fees: {
+        Row: {
+          access_expires_at: string
+          access_token: string
+          auction_id: string
+          bidder_id: string
+          created_at: string
+          fee_amount: number
+          id: string
+          payment_status: string
+          updated_at: string
+        }
+        Insert: {
+          access_expires_at: string
+          access_token?: string
+          auction_id: string
+          bidder_id: string
+          created_at?: string
+          fee_amount: number
+          id?: string
+          payment_status?: string
+          updated_at?: string
+        }
+        Update: {
+          access_expires_at?: string
+          access_token?: string
+          auction_id?: string
+          bidder_id?: string
+          created_at?: string
+          fee_amount?: number
+          id?: string
+          payment_status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_entrance_fees_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auction_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_entrance_fees_bidder_id_fkey"
+            columns: ["bidder_id"]
+            isOneToOne: false
+            referencedRelation: "bidders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auction_events: {
         Row: {
           created_at: string
           description: string | null
           end_date: string
+          entrance_fee: number | null
           id: string
+          revenue: number | null
           start_date: string
           status: string
+          theme_title: string | null
           title: string
+          total_bids: number | null
           updated_at: string
+          viewer_count: number | null
         }
         Insert: {
           created_at?: string
           description?: string | null
           end_date: string
+          entrance_fee?: number | null
           id?: string
+          revenue?: number | null
           start_date: string
           status?: string
+          theme_title?: string | null
           title: string
+          total_bids?: number | null
           updated_at?: string
+          viewer_count?: number | null
         }
         Update: {
           created_at?: string
           description?: string | null
           end_date?: string
+          entrance_fee?: number | null
           id?: string
+          revenue?: number | null
           start_date?: string
           status?: string
+          theme_title?: string | null
           title?: string
+          total_bids?: number | null
           updated_at?: string
+          viewer_count?: number | null
         }
         Relationships: []
+      }
+      auction_streams: {
+        Row: {
+          auction_id: string
+          created_at: string
+          embed_code: string | null
+          entrance_fee: number
+          id: string
+          is_active: boolean
+          platform: string
+          stream_url: string
+          updated_at: string
+          viewer_count: number
+        }
+        Insert: {
+          auction_id: string
+          created_at?: string
+          embed_code?: string | null
+          entrance_fee?: number
+          id?: string
+          is_active?: boolean
+          platform: string
+          stream_url: string
+          updated_at?: string
+          viewer_count?: number
+        }
+        Update: {
+          auction_id?: string
+          created_at?: string
+          embed_code?: string | null
+          entrance_fee?: number
+          id?: string
+          is_active?: boolean
+          platform?: string
+          stream_url?: string
+          updated_at?: string
+          viewer_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_streams_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auction_events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       audit_logs: {
         Row: {
@@ -295,6 +408,39 @@ export type Database = {
           subtotal?: number
           tax?: number
           total?: number
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          notifications: Json
+          privacy_settings: Json
+          theme: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          notifications?: Json
+          privacy_settings?: Json
+          theme?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          notifications?: Json
+          privacy_settings?: Json
+          theme?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
