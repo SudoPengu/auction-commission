@@ -79,7 +79,7 @@ export const LiveAuctionCard: React.FC<LiveAuctionCardProps> = ({
             className="w-full"
             variant={auction.entrance_fee ? "default" : "outline"}
           >
-            {auction.entrance_fee ? `Join ($${auction.entrance_fee})` : 'Join Auction'}
+            Join Auction (₱3,000 entrance fee)
           </Button>
         );
       }
@@ -177,7 +177,7 @@ export const LiveAuctionCard: React.FC<LiveAuctionCardProps> = ({
           {auction.revenue && auction.status === 'COMPLETED' && (
             <div className="flex items-center gap-2">
               <DollarSign size={16} className="text-muted-foreground" />
-              <span>{auction.revenue} Revenue</span>
+              <span>₱{auction.revenue} Revenue</span>
             </div>
           )}
           

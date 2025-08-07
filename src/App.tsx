@@ -52,7 +52,7 @@ const AppRoutes = () => {
         <Route path="/pos" element={<Layout><Dashboard /></Layout>} />
         <Route path="/qr-scanner" element={<Layout><QRScanner /></Layout>} />
         <Route path="/auctions" element={<Layout><LiveAuctions /></Layout>} />
-        <Route path="/bidder-profiles" element={<Layout><BidderProfiles /></Layout>} />
+        <Route path="/bidders" element={<Layout><BidderProfiles /></Layout>} />
         <Route path="/profile" element={<Layout><Profile /></Layout>} />
         
         {/* Admin only routes */}

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Users, Eye, DollarSign, TrendingUp, Clock, Gavel } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { LiveAuctionCard, AuctionEvent } from '@/components/auction/LiveAuctionCard';
+import LiveAuctionHero from '@/components/auction/LiveAuctionHero';
 import { AuctionCalendar } from '@/components/auction/AuctionCalendar';
 import { toast } from "@/hooks/use-toast";
 import POS from './POS';
@@ -65,7 +66,7 @@ const LiveAuctions: React.FC = () => {
       itemCount: 203,
       viewer_count: 567,
       total_bids: 892,
-      revenue: '$127,450',
+      revenue: '127450',
       duration: '3h 15m'
     },
     {
@@ -79,7 +80,7 @@ const LiveAuctions: React.FC = () => {
       itemCount: 324,
       viewer_count: 189,
       total_bids: 456,
-      revenue: '$89,230',
+      revenue: '89230',
       duration: '4h 0m'
     }
   ]);
@@ -113,10 +114,10 @@ const LiveAuctions: React.FC = () => {
 
   const handleJoinAuction = (id: number) => {
     const auction = auctionEvents.find(a => a.id === id);
-    if (auction?.entrance_fee) {
+    if (profile?.role === 'bidder') {
       toast({
         title: "Payment Required",
-        description: `Please pay $${auction.entrance_fee} entrance fee to join this auction.`,
+        description: "Please pay ₱3,000 entrance fee to join this auction.",
       });
     } else {
       toast({
@@ -170,8 +171,8 @@ const LiveAuctions: React.FC = () => {
         </div>
       </div>
 
-      {/* POS Floating Panel */}
-      <POS />
+      {/* POS Floating Panel - Only for staff/admin */}
+      {profile?.role !== 'bidder' && <POS />}
 
       {/* Live Statistics Dashboard */}
       {(liveAuctions.length > 0 || isStaffOrAdmin) && (
@@ -208,7 +209,7 @@ const LiveAuctions: React.FC = () => {
               <TrendingUp size={16} className="text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${stats.totalRevenue.toLocaleString()}</div>
+              <div className="text-2xl font-bold">₱{stats.totalRevenue.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">
                 From completed auctions
               </p>
@@ -217,26 +218,36 @@ const LiveAuctions: React.FC = () => {
         </div>
       )}
 
-      {/* Live Now Section */}
+      {/* Live Now Section - Hero Style */}
       {liveAuctions.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-destructive rounded-full animate-pulse" />
-            <h2 className="text-2xl font-bold text-destructive">LIVE NOW</h2>
+            <h2 className="text-3xl font-bold text-destructive">🔴 LIVE NOW</h2>
             <Badge variant="destructive" className="animate-pulse">{liveAuctions.length}</Badge>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {liveAuctions.map((auction) => (
-              <LiveAuctionCard
-                key={auction.id}
-                auction={auction}
-                onStart={handleStartAuction}
-                onPause={handlePauseAuction}
-                onStop={handleStopAuction}
-                onJoin={handleJoinAuction}
-              />
-            ))}
-          </div>
+          
+          {/* First live auction gets hero treatment */}
+          <LiveAuctionHero
+            auction={liveAuctions[0]}
+            onJoin={handleJoinAuction}
+          />
+          
+          {/* Additional live auctions in grid if more than one */}
+          {liveAuctions.length > 1 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {liveAuctions.slice(1).map((auction) => (
+                <LiveAuctionCard
+                  key={auction.id}
+                  auction={auction}
+                  onStart={handleStartAuction}
+                  onPause={handlePauseAuction}
+                  onStop={handleStopAuction}
+                  onJoin={handleJoinAuction}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 

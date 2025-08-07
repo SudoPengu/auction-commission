@@ -68,7 +68,9 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                 <DropdownMenuSeparator />
               </>
             )}
-            <DropdownMenuItem>Profile</DropdownMenuItem>
+            <DropdownMenuItem>
+              <a href="/profile" className="w-full">Profile</a>
+            </DropdownMenuItem>
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout}>Log out</DropdownMenuItem>

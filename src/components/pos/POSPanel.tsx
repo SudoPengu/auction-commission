@@ -49,9 +49,9 @@ const POSPanel = () => {
         variant="ghost"
         size="icon"
         className="absolute right-4 top-4 md:hidden"
-        onClick={() => setIsFloating(!isFloating)}
+        onClick={() => setIsCollapsed(true)}
       >
-        {isFloating ? <ChevronRight /> : <ChevronLeft />}
+        <ChevronRight />
       </Button>
 
       {isCollapsed ? (

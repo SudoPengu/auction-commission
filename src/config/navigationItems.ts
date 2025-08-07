@@ -37,10 +37,10 @@ export const navigationItems: NavItem[] = [
     roles: ['bidder']
   },
   {
-    name: 'Profile',
+    name: 'Bidder Profiles',
     icon: UserCircle,
-    path: '/profile',
-    roles: ['staff', 'admin', 'super-admin', 'auction-manager', 'bidder']
+    path: '/bidders',
+    roles: ['staff', 'admin', 'super-admin', 'auction-manager']
   },
   {
     name: 'Inventory',
