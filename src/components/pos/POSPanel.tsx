@@ -3,13 +3,20 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/contexts/AuthContext';
 import POSContent from './POSContent';
 
 const POSPanel = () => {
+  const { profile } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isFloating, setIsFloating] = useState(true); // New state for floating mode
   const isMobile = useIsMobile();
+
+  // CRITICAL: Never show POS for bidders
+  if (profile?.role === 'bidder') {
+    return null;
+  }
 
   useEffect(() => {
     const handleFocusEvent = () => {

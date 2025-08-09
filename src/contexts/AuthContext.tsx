@@ -20,23 +20,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log("Auth state:", { user, profile, isAuthenticated: !!user, isLoading });
   }, [user, profile, isLoading]);
 
-  // Authentication state listener
+  // Authentication state listener with performance optimization
   useEffect(() => {
     console.log("Setting up auth state listener");
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.id);
         
         if (session?.user) {
+          // Set user immediately for faster UI response
           setUser(session.user);
+          setIsLoading(true);
           
-          // Use setTimeout to avoid potential deadlocks with Supabase client
-          setTimeout(async () => {
+          try {
+            // Fetch profile in parallel, not sequential
             const userProfile = await fetchUserProfile(session.user.id, session.user.email);
             setProfile(userProfile);
+          } catch (error) {
+            console.error("Profile fetch failed:", error);
+            setProfile(null);
+          } finally {
             setIsLoading(false);
-          }, 0);
+          }
         } else {
           setUser(null);
           setProfile(null);
@@ -45,18 +51,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      console.log("Initial session check:", session?.user?.id);
-      
-      if (session?.user) {
-        setUser(session.user);
-        const userProfile = await fetchUserProfile(session.user.id, session.user.email);
-        setProfile(userProfile);
+    // Check for existing session with improved error handling
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log("Initial session check:", session?.user?.id);
+        
+        if (error) {
+          console.error("Session check error:", error);
+          setIsLoading(false);
+          return;
+        }
+        
+        if (session?.user) {
+          setUser(session.user);
+          try {
+            const userProfile = await fetchUserProfile(session.user.id, session.user.email);
+            setProfile(userProfile);
+          } catch (profileError) {
+            console.error("Initial profile fetch failed:", profileError);
+            setProfile(null);
+          }
+        }
+      } catch (error) {
+        console.error("Auth initialization error:", error);
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     return () => {
       subscription.unsubscribe();

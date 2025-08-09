@@ -20,6 +20,7 @@ import QRScanner from "./pages/QRScanner";
 import LiveAuctions from "./pages/LiveAuctions";
 import BidderProfiles from "./pages/BidderProfiles";
 import Profile from "./pages/Profile";
+import MyBids from "./pages/MyBids";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,7 @@ const AppRoutes = () => {
         <Route path="/qr-scanner" element={<Layout><QRScanner /></Layout>} />
         <Route path="/auctions" element={<Layout><LiveAuctions /></Layout>} />
         <Route path="/bidders" element={<Layout><BidderProfiles /></Layout>} />
+        <Route path="/my-bids" element={<Layout><MyBids /></Layout>} />
         <Route path="/profile" element={<Layout><Profile /></Layout>} />
         
         {/* Admin only routes */}

@@ -27,7 +27,7 @@ const LiveAuctions: React.FC = () => {
       itemCount: 47,
       viewer_count: 234,
       total_bids: 128,
-      entrance_fee: 25.00,
+      entrance_fee: 3000,
       platform: 'youtube',
       stream_url: 'https://youtube.com/watch?v=example'
     },
@@ -41,7 +41,7 @@ const LiveAuctions: React.FC = () => {
       status: 'STARTING_SOON',
       itemCount: 89,
       viewer_count: 67,
-      entrance_fee: 15.00,
+      entrance_fee: 3000,
       platform: 'obs'
     },
     {
@@ -53,7 +53,7 @@ const LiveAuctions: React.FC = () => {
       location: 'West Hall',
       status: 'UPCOMING',
       itemCount: 156,
-      entrance_fee: 20.00
+      entrance_fee: 3000
     },
     {
       id: 4,
