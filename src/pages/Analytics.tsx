@@ -3,6 +3,8 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '../contexts/AuthContext';
 import POS from './POS';
+import CategoryPieChart from '../components/analytics/charts/CategoryPieChart';
+import ProductBarChart from '../components/analytics/charts/ProductBarChart';
 
 const Analytics: React.FC = () => {
   const { profile } = useAuth();
@@ -32,27 +34,8 @@ const Analytics: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Revenue by Category</CardTitle>
-                </CardHeader>
-                <CardContent className="h-[200px] flex items-center justify-center">
-                  <p className="text-center text-muted-foreground">
-                    Revenue by category chart would appear here
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Top Selling Products</CardTitle>
-                </CardHeader>
-                <CardContent className="h-[200px] flex items-center justify-center">
-                  <p className="text-center text-muted-foreground">
-                    Top selling products chart would appear here
-                  </p>
-                </CardContent>
-              </Card>
+              <CategoryPieChart />
+              <ProductBarChart />
             </div>
           </CardContent>
         </Card>

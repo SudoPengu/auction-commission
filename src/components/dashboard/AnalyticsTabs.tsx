@@ -2,10 +2,14 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import RevenueAreaChart from './charts/RevenueAreaChart';
+import SalesLineChart from './charts/SalesLineChart';
+import UsersComboChart from './charts/UsersComboChart';
+import { TimeFrame } from './data/chartTypes';
 
 interface AnalyticsTabsProps {
   getChartLabel: () => string;
-  timeFrame: string;
+  timeFrame: TimeFrame;
 }
 
 const AnalyticsTabs: React.FC<AnalyticsTabsProps> = ({ getChartLabel, timeFrame }) => {
@@ -17,20 +21,11 @@ const AnalyticsTabs: React.FC<AnalyticsTabsProps> = ({ getChartLabel, timeFrame 
         <TabsTrigger value="reports">Reports</TabsTrigger>
       </TabsList>
       <TabsContent value="overview" className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>{getChartLabel()}</CardTitle>
-            <CardDescription>
-              {timeFrame} Sales Overview
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="h-[200px] flex items-center justify-center">
-            <div className="text-muted-foreground text-center">
-              <div className="text-xl mb-2">Graph Visualization</div>
-              <p>Sales data visualization would appear here</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <RevenueAreaChart timeFrame={timeFrame} />
+          <SalesLineChart timeFrame={timeFrame} />
+          <UsersComboChart timeFrame={timeFrame} />
+        </div>
       </TabsContent>
       <TabsContent value="analytics" className="space-y-4">
         <Card>
