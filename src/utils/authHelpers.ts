@@ -40,8 +40,8 @@ export const fetchUserProfile = async (userId: string, userEmail?: string) => {
     }
     
     // Create a mock profile as fallback (only for development)
-    if (userEmail) {
-      console.log("No profile found, using mock profile for", userEmail);
+    if (userEmail && import.meta.env.DEV) {
+      console.log("DEV MODE: No profile found, using mock profile for", userEmail);
       return createMockProfile(userId, userEmail);
     }
     
@@ -51,8 +51,8 @@ export const fetchUserProfile = async (userId: string, userEmail?: string) => {
     console.error('Unexpected error fetching profile:', error);
     
     // Create a mock profile as fallback (only for development)
-    if (userEmail) {
-      console.log("Using mock profile after error for", userEmail);
+    if (userEmail && import.meta.env.DEV) {
+      console.log("DEV MODE: Using mock profile after error for", userEmail);
       return createMockProfile(userId, userEmail);
     }
     return null;
