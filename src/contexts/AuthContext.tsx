@@ -15,17 +15,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Debug log
+  // Debug log (development only)
   useEffect(() => {
-    console.log("Auth state:", { user, profile, isAuthenticated: !!user, isLoading });
+    if (import.meta.env.DEV) {
+      console.log("Auth state:", { user, profile, isAuthenticated: !!user, isLoading });
+    }
   }, [user, profile, isLoading]);
 
   // Authentication state listener with performance optimization
   useEffect(() => {
-    console.log("Setting up auth state listener");
+    if (import.meta.env.DEV) {
+      console.log("Setting up auth state listener");
+    }
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log("Auth state changed:", event, session?.user?.id);
         
         if (session?.user) {
@@ -33,16 +37,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(session.user);
           setIsLoading(true);
           
-          try {
-            // Fetch profile in parallel, not sequential
-            const userProfile = await fetchUserProfile(session.user.id, session.user.email);
-            setProfile(userProfile);
-          } catch (error) {
-            console.error("Profile fetch failed:", error);
-            setProfile(null);
-          } finally {
-            setIsLoading(false);
-          }
+          // Defer Supabase calls to prevent deadlocks
+          setTimeout(() => {
+            fetchUserProfile(session.user.id, session.user.email)
+              .then(userProfile => {
+                setProfile(userProfile);
+                setIsLoading(false);
+              })
+              .catch(error => {
+                console.error("Profile fetch failed:", error);
+                setProfile(null);
+                setIsLoading(false);
+              });
+          }, 0);
         } else {
           setUser(null);
           setProfile(null);

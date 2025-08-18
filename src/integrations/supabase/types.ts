@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -54,6 +54,13 @@ export type Database = {
             columns: ["auction_id"]
             isOneToOne: false
             referencedRelation: "auction_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_entrance_fees_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auction_events_public"
             referencedColumns: ["id"]
           },
           {
@@ -156,6 +163,13 @@ export type Database = {
             columns: ["auction_id"]
             isOneToOne: false
             referencedRelation: "auction_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_streams_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auction_events_public"
             referencedColumns: ["id"]
           },
         ]
@@ -479,7 +493,39 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      auction_events_public: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          end_date: string | null
+          id: string | null
+          start_date: string | null
+          status: string | null
+          theme_title: string | null
+          title: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string | null
+          start_date?: string | null
+          status?: string | null
+          theme_title?: string | null
+          title?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string | null
+          start_date?: string | null
+          status?: string | null
+          theme_title?: string | null
+          title?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_current_user_role: {
@@ -497,9 +543,9 @@ export type Database = {
       log_activity: {
         Args: {
           action: string
-          resource: string
           details?: Json
           ip_address?: string
+          resource: string
         }
         Returns: string
       }

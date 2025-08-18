@@ -158,6 +158,7 @@ const Login: React.FC = () => {
         email: values.email,
         password: values.password,
         options: {
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             full_name: values.fullName,
             phone_number: formattedPhone,
