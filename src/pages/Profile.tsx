@@ -27,6 +27,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { ActivityLog } from '@/components/profile/ActivityLog';
 import { BidderFriendlyStats } from '@/components/profile/BidderFriendlyStats';
+import DisplayNameEditor from '@/components/profile/DisplayNameEditor';
 import { toast } from "@/hooks/use-toast";
 
 const Profile: React.FC = () => {
@@ -341,6 +342,8 @@ const Profile: React.FC = () => {
 
         {/* Preferences Tab */}
         <TabsContent value="preferences" className="space-y-6">
+          <DisplayNameEditor />
+          
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

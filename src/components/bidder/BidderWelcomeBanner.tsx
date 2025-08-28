@@ -3,9 +3,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Star, Crown, Trophy, Zap } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 
 const BidderWelcomeBanner: React.FC = () => {
   const { profile } = useAuth();
+  const { preferences } = useUserPreferences();
+  
+  const displayName = preferences?.display_name || profile?.full_name || 'User';
 
   return (
     <div className="relative overflow-hidden">
@@ -19,7 +23,7 @@ const BidderWelcomeBanner: React.FC = () => {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-foreground">
-                    Welcome back, {profile?.full_name}!
+                    Welcome back, {displayName}!
                   </h1>
                   <p className="text-muted-foreground">Ready to win some amazing items?</p>
                 </div>

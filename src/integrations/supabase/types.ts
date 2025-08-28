@@ -451,6 +451,8 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string
+          display_name: string | null
+          display_name_changed_at: string | null
           notifications: Json
           privacy_settings: Json
           theme: string
@@ -461,6 +463,8 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          display_name?: string | null
+          display_name_changed_at?: string | null
           notifications?: Json
           privacy_settings?: Json
           theme?: string
@@ -471,6 +475,8 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          display_name?: string | null
+          display_name_changed_at?: string | null
           notifications?: Json
           privacy_settings?: Json
           theme?: string
@@ -549,6 +555,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_change_display_name: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["user_role"]
@@ -569,6 +579,10 @@ export type Database = {
           resource: string
         }
         Returns: string
+      }
+      update_display_name: {
+        Args: { new_display_name: string }
+        Returns: Json
       }
     }
     Enums: {

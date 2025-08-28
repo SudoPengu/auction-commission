@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import Clock from './Clock';
 import { useAuth } from '../contexts/AuthContext';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -20,6 +21,9 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
   const { profile, logout } = useAuth();
+  const { preferences } = useUserPreferences();
+  
+  const displayName = preferences?.display_name || profile?.full_name || 'User';
 
   return (
     <header className="h-16 bg-white border-b border-border flex items-center px-4 justify-between">
@@ -62,7 +66,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
             {profile && (
               <>
                 <div className="px-2 py-1.5 text-sm">
-                  <div className="font-medium">{profile.full_name}</div>
+                  <div className="font-medium">{displayName}</div>
                   <div className="text-xs text-muted-foreground capitalize">{profile.role}</div>
                 </div>
                 <DropdownMenuSeparator />
