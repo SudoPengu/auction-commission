@@ -9,6 +9,10 @@ export const useNavigation = () => {
   const { profile } = useAuth();
 
   const isPathActive = (path: string) => {
+    // Special case for Home button - active on both dashboard and auctions
+    if (path === '/dashboard') {
+      return location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/auctions');
+    }
     if (location.pathname === path) return true;
     if (path !== '/' && location.pathname.startsWith(path)) return true;
     return false;

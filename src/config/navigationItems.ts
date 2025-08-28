@@ -1,20 +1,19 @@
 
 import { 
-  LayoutDashboard, 
+  Home, 
   Package2, 
   Users, 
   BarChart3, 
   Settings,
   ShoppingCart,
-  CalendarDays,
   UserCircle
 } from 'lucide-react';
 import { NavItem } from '@/types/navigation';
 
 export const navigationItems: NavItem[] = [
   {
-    name: 'Dashboard',
-    icon: LayoutDashboard,
+    name: 'Home',
+    icon: Home,
     path: '/dashboard',
     roles: ['staff', 'admin', 'super-admin', 'auction-manager', 'bidder']
   },
@@ -23,12 +22,6 @@ export const navigationItems: NavItem[] = [
     icon: ShoppingCart,
     path: '/pos',
     roles: ['staff', 'admin', 'super-admin', 'auction-manager']
-  },
-  {
-    name: 'Live Auctions',
-    icon: CalendarDays,
-    path: '/auctions',
-    roles: ['staff', 'admin', 'super-admin', 'auction-manager', 'bidder']
   },
   {
     name: 'My Bids',
