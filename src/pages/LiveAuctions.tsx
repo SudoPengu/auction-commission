@@ -11,11 +11,70 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import POS from './POS';
 
+// Placeholder auctions with UUID strings as fallback
+const placeholderAuctions: AuctionEvent[] = [
+  {
+    id: 'c7a8f3d2-9e4b-4a6c-8d5e-1f2a3b4c5d6e',
+    title: 'Premium Jewelry Collection',
+    theme_title: 'Sparkles & Shine',
+    date: 'December 28, 2024',
+    time: '2:00 PM - 4:00 PM',
+    status: 'LIVE',
+    itemCount: 156,
+    viewer_count: 1247,
+    total_bids: 89,
+    revenue: '125000',
+    entrance_fee: 3000,
+    platform: 'youtube',
+    stream_url: 'https://youtube.com/live/abc123'
+  },
+  {
+    id: 'e1b9c2d3-4f5a-6789-abc1-def234567890',
+    title: 'Vintage Car Auction',
+    theme_title: 'Classic Rides',
+    date: 'December 29, 2024',
+    time: '10:00 AM - 2:00 PM',
+    status: 'STARTING_SOON',
+    itemCount: 45,
+    viewer_count: 892,
+    total_bids: 12,
+    revenue: '0',
+    entrance_fee: 5000,
+    platform: 'youtube'
+  },
+  {
+    id: 'f2c3d4e5-6789-1abc-2def-345678901234',
+    title: 'Art & Antiques Fair',
+    theme_title: 'Timeless Treasures',
+    date: 'January 2, 2025',
+    time: '3:00 PM - 6:00 PM',
+    status: 'UPCOMING',
+    itemCount: 203,
+    entrance_fee: 2500,
+    platform: 'youtube'
+  },
+  {
+    id: 'a3b4c5d6-7890-1234-5678-90abcdef1234',
+    title: 'Designer Fashion Show',
+    theme_title: 'Haute Couture',
+    date: 'December 25, 2024',
+    time: '7:00 PM - 9:00 PM',
+    status: 'COMPLETED',
+    itemCount: 89,
+    viewer_count: 2156,
+    total_bids: 234,
+    revenue: '78500',
+    entrance_fee: 4000,
+    platform: 'youtube',
+    duration: '2h 15m'
+  }
+];
+
 const LiveAuctions: React.FC = () => {
   const { profile } = useAuth();
   const isStaffOrAdmin = profile?.role && ['staff', 'admin', 'super-admin', 'auction-manager'].includes(profile.role);
   
-  const [auctionEvents, setAuctionEvents] = useState<AuctionEvent[]>([]);
+  const [auctionEvents, setAuctionEvents] = useState<AuctionEvent[]>(placeholderAuctions);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -68,12 +127,19 @@ const LiveAuctions: React.FC = () => {
             undefined
         }));
 
-        setAuctionEvents(mappedAuctions);
+        // Use real auctions if data exists, otherwise keep placeholders
+        if (mappedAuctions.length > 0) {
+          setAuctionEvents(mappedAuctions);
+        } else {
+          // Keep placeholder auctions if no real data
+          console.log('No auctions found in database, using placeholders');
+        }
       } catch (error) {
         console.error('Error fetching auctions:', error);
+        // Keep placeholders on error
         toast({
           title: "Error",
-          description: "Failed to load auctions. Please try again.",
+          description: "Failed to load auctions. Using sample data.",
           variant: "destructive"
         });
       } finally {
