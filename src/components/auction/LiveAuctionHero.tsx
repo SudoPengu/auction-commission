@@ -44,7 +44,7 @@ const LiveAuctionHero: React.FC<LiveAuctionHeroProps> = ({ auction, onJoin }) =>
         const { data, error } = await supabase
           .from('auction_entrance_fees')
           .select('payment_status, access_expires_at')
-          .eq('auction_id', auction.id)
+          .eq('auction_id', auction.id.toString())
           .eq('bidder_id', user.id)
           .eq('payment_status', 'paid')
           .maybeSingle();
