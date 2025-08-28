@@ -130,16 +130,30 @@ const LiveAuctionHero: React.FC<LiveAuctionHeroProps> = ({ auction, onJoin }) =>
                 <div>{auction.itemCount} items</div>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Total Bids</p>
-                  <p className="text-2xl font-bold">{auction.total_bids?.toLocaleString() || 0}</p>
+              {/* Show different stats based on user role */}
+              {isBidder ? (
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Total Bids</p>
+                    <p className="text-2xl font-bold">{auction.total_bids?.toLocaleString() || 0}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Active Bidders</p>
+                    <p className="text-2xl font-bold">{Math.floor((auction.viewer_count || 0) * 0.3)}</p>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Current Revenue</p>
-                  <p className="text-2xl font-bold">₱{auction.revenue ? parseFloat(auction.revenue.replace(/[^0-9.-]/g, '')).toLocaleString() : 0}</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Total Bids</p>
+                    <p className="text-2xl font-bold">{auction.total_bids?.toLocaleString() || 0}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Current Revenue</p>
+                    <p className="text-2xl font-bold">₱{auction.revenue ? parseFloat(auction.revenue.replace(/[^0-9.-]/g, '')).toLocaleString() : 0}</p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Payment Section for Bidders */}
               {isBidder && !isCheckingAccess && (

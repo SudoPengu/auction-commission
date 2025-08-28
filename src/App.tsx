@@ -26,7 +26,7 @@ const queryClient = new QueryClient();
 
 // Separated routes component to avoid nesting inside App
 const AppRoutes = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, profile } = useAuth();
   
   useEffect(() => {
     console.log("AppRoutes rendering - Auth state:", { isAuthenticated, isLoading, currentPath: window.location.pathname });
@@ -44,12 +44,16 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" replace />} />
+      <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to={profile?.role === 'bidder' ? '/auctions' : '/dashboard'} replace />} />
       
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+        <Route path="/" element={<Navigate to={profile?.role === 'bidder' ? '/auctions' : '/dashboard'} replace />} />
+        <Route path="/dashboard" element={
+          <Layout>
+            {profile?.role === 'bidder' ? <Navigate to="/auctions" replace /> : <Dashboard />}
+          </Layout>
+        } />
         <Route path="/pos" element={<Layout><Dashboard /></Layout>} />
         <Route path="/qr-scanner" element={<Layout><QRScanner /></Layout>} />
         <Route path="/auctions" element={<Layout><LiveAuctions /></Layout>} />

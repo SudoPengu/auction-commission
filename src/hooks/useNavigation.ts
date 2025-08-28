@@ -17,7 +17,10 @@ export const useNavigation = () => {
   const handleNavClick = (path: string) => {
     console.log(`Navigating to ${path}`);
     
-    if (path === '/pos' && location.pathname === '/dashboard') {
+    // Redirect bidders from dashboard to auctions
+    if (path === '/dashboard' && profile?.role === 'bidder') {
+      navigate('/auctions');
+    } else if (path === '/pos' && location.pathname === '/dashboard') {
       console.log("POS button clicked while on dashboard - focusing POS panel");
       const event = new CustomEvent('focus-pos-panel');
       window.dispatchEvent(event);

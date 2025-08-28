@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Users, Eye, DollarSign, TrendingUp, Clock, Gavel } from 'lucide-react';
+import { Plus, Users, Eye, DollarSign, TrendingUp, Clock, Gavel, Trophy, Target, Zap } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { LiveAuctionCard, AuctionEvent } from '@/components/auction/LiveAuctionCard';
 import LiveAuctionHero from '@/components/auction/LiveAuctionHero';
@@ -10,6 +10,8 @@ import { AuctionCalendar } from '@/components/auction/AuctionCalendar';
 import { toast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import POS from './POS';
+import BidderWelcomeBanner from '../components/bidder/BidderWelcomeBanner';
+import { BidderFriendlyStats } from '../components/profile/BidderFriendlyStats';
 
 // Placeholder auctions with UUID strings as fallback
 const placeholderAuctions: AuctionEvent[] = [
@@ -73,6 +75,7 @@ const placeholderAuctions: AuctionEvent[] = [
 const LiveAuctions: React.FC = () => {
   const { profile } = useAuth();
   const isStaffOrAdmin = profile?.role && ['staff', 'admin', 'super-admin', 'auction-manager'].includes(profile.role);
+  const isBidder = profile?.role === 'bidder';
   
   const [auctionEvents, setAuctionEvents] = useState<AuctionEvent[]>(placeholderAuctions);
   const [isLoading, setIsLoading] = useState(true);
@@ -213,6 +216,18 @@ const LiveAuctions: React.FC = () => {
 
   const stats = getTotalStats();
 
+  // Mock bidder stats for demonstration
+  const mockBidderStats = {
+    auctionWins: 12,
+    participationRate: 85,
+    favoriteItems: 8,
+    memberSince: '2023-01-15',
+    loyaltyPoints: 2450,
+    winningStreak: 3,
+    totalAuctions: 47,
+    avgPosition: 2.3
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -226,72 +241,83 @@ const LiveAuctions: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-6">
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Live Auctions</h1>
-          <p className="text-muted-foreground">
-            Real-time auction management and participation
-          </p>
+      {/* Conditional header based on user role */}
+      {isBidder ? (
+        <BidderWelcomeBanner />
+      ) : (
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Live Auctions</h1>
+            <p className="text-muted-foreground">
+              Real-time auction management and participation
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+            <p className="text-sm text-muted-foreground">
+              Logged in as: <span className="font-semibold">{profile?.full_name} ({profile?.role})</span>
+            </p>
+            {isStaffOrAdmin && (
+              <Button className="flex items-center gap-2">
+                <Plus size={16} />
+                New Auction
+              </Button>
+            )}
+          </div>
         </div>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-          <p className="text-sm text-muted-foreground">
-            Logged in as: <span className="font-semibold">{profile?.full_name} ({profile?.role})</span>
-          </p>
-          {isStaffOrAdmin && (
-            <Button className="flex items-center gap-2">
-              <Plus size={16} />
-              New Auction
-            </Button>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* POS Floating Panel - Only for staff/admin */}
-      {profile?.role !== 'bidder' && <POS />}
+      {!isBidder && <POS />}
 
-      {/* Live Statistics Dashboard */}
-      {(liveAuctions.length > 0 || isStaffOrAdmin) && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Live Viewers</CardTitle>
-              <Eye size={16} className="text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalViewers}</div>
-              <p className="text-xs text-muted-foreground">
-                Across {liveAuctions.length} live auction{liveAuctions.length !== 1 ? 's' : ''}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Bids</CardTitle>
-              <Gavel size={16} className="text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalActiveBids}</div>
-              <p className="text-xs text-muted-foreground">
-                Real-time bidding activity
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
-              <TrendingUp size={16} className="text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">₱{stats.totalRevenue.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">
-                From completed auctions
-              </p>
-            </CardContent>
-          </Card>
+      {/* Stats Dashboard - Different for bidders */}
+      {isBidder ? (
+        <div className="mb-8">
+          <BidderFriendlyStats stats={mockBidderStats} />
         </div>
+      ) : (
+        /* Live Statistics Dashboard for staff/admin */
+        (liveAuctions.length > 0 || isStaffOrAdmin) && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Live Viewers</CardTitle>
+                <Eye size={16} className="text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.totalViewers}</div>
+                <p className="text-xs text-muted-foreground">
+                  Across {liveAuctions.length} live auction{liveAuctions.length !== 1 ? 's' : ''}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Bids</CardTitle>
+                <Gavel size={16} className="text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.totalActiveBids}</div>
+                <p className="text-xs text-muted-foreground">
+                  Real-time bidding activity
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
+                <TrendingUp size={16} className="text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">₱{stats.totalRevenue.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">
+                  From completed auctions
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )
       )}
 
       {/* Live Now Section - Hero Style */}

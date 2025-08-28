@@ -174,7 +174,8 @@ export const LiveAuctionCard: React.FC<LiveAuctionCardProps> = ({
             </div>
           )}
           
-          {auction.revenue && auction.status === 'COMPLETED' && (
+          {/* Hide revenue for bidders */}
+          {auction.revenue && auction.status === 'COMPLETED' && !profile?.role?.includes('bidder') && (
             <div className="flex items-center gap-2">
               <DollarSign size={16} className="text-muted-foreground" />
               <span>₱{auction.revenue} Revenue</span>
