@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +21,7 @@ export const AuctionCalendar: React.FC<AuctionCalendarProps> = ({ auctions, onDa
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
   };
   
-  const getAuctionsForDate = (date: number) => {
+  const getAuctionsForDate = useCallback((date: number) => {
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
     const checkDate = new Date(currentYear, currentMonth, date);
@@ -30,71 +30,82 @@ export const AuctionCalendar: React.FC<AuctionCalendarProps> = ({ auctions, onDa
       const auctionDate = new Date(auction.date);
       return auctionDate.toDateString() === checkDate.toDateString();
     });
-  };
+  }, [auctions, currentDate]);
   
-  const navigateMonth = (direction: 'prev' | 'next') => {
+  const navigateMonth = useCallback((direction: 'prev' | 'next') => {
     setCurrentDate(prev => {
-      const newDate = new Date(prev);
-      if (direction === 'prev') {
-        newDate.setMonth(prev.getMonth() - 1);
-      } else {
-        newDate.setMonth(prev.getMonth() + 1);
-      }
+      const fromIso = prev.toISOString();
+      const year = prev.getFullYear();
+      const month = prev.getMonth() + (direction === 'prev' ? -1 : 1);
+      // Always go to the first of the target month to avoid day overflow (e.g., 31 -> 30/28 issues)
+      const newDate = new Date(year, month, 1);
+      console.log('AuctionCalendar navigateMonth', { direction, fromIso, toIso: newDate.toISOString() });
       return newDate;
     });
-  };
+  }, []);
   
   const monthName = currentDate.toLocaleString('default', { month: 'long' });
   const year = currentDate.getFullYear();
-  const daysInMonth = getDaysInMonth(currentDate);
-  const firstDay = getFirstDayOfMonth(currentDate);
   const today = new Date();
   
-  const days = [];
-  
-  // Empty cells for days before the first day of the month
-  for (let i = 0; i < firstDay; i++) {
-    days.push(<div key={`empty-${i}`} className="h-12" />);
-  }
-  
-  // Days of the month
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dayAuctions = getAuctionsForDate(day);
-    const isToday = today.getDate() === day && 
-                   today.getMonth() === currentDate.getMonth() && 
-                   today.getFullYear() === currentDate.getFullYear();
+  const days = useMemo(() => {
+    const list: React.ReactNode[] = [];
+    const daysInMonth = getDaysInMonth(currentDate);
+    const firstDay = getFirstDayOfMonth(currentDate);
+
+    // Leading empty cells
+    for (let i = 0; i < firstDay; i++) {
+      list.push(<div key={`empty-start-${i}`} className="h-12" />);
+    }
     
-    days.push(
-      <div 
-        key={day} 
-        className={`h-12 border border-border rounded-md p-1 cursor-pointer transition-colors hover:bg-accent ${
-          isToday ? 'bg-primary/10 border-primary' : ''
-        }`}
-        onClick={() => onDateSelect?.(new Date(currentDate.getFullYear(), currentDate.getMonth(), day))}
-      >
-        <div className="text-sm font-medium">{day}</div>
-        {dayAuctions.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1">
-            {dayAuctions.slice(0, 2).map((auction, idx) => (
-              <div 
-                key={idx}
-                className={`w-2 h-2 rounded-full ${
-                  auction.status === 'LIVE' ? 'bg-destructive animate-pulse' :
-                  auction.status === 'STARTING_SOON' ? 'bg-orange-500' :
-                  auction.status === 'UPCOMING' ? 'bg-primary' :
-                  'bg-muted-foreground'
-                }`}
-              />
-            ))}
-            {dayAuctions.length > 2 && (
-              <div className="text-xs text-muted-foreground">+{dayAuctions.length - 2}</div>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  }
-  
+    // Days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayAuctions = getAuctionsForDate(day);
+      const isToday = today.getDate() === day && 
+                      today.getMonth() === currentDate.getMonth() && 
+                      today.getFullYear() === currentDate.getFullYear();
+      
+      list.push(
+        <div 
+          key={day} 
+          className={`h-12 border border-border rounded-md p-1 cursor-pointer transition-colors hover:bg-accent ${
+            isToday ? 'bg-primary/10 border-primary' : ''
+          }`}
+          onClick={() => onDateSelect?.(new Date(currentDate.getFullYear(), currentDate.getMonth(), day))}
+        >
+          <div className="text-sm font-medium">{day}</div>
+          {dayAuctions.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {dayAuctions.slice(0, 2).map((auction, idx) => (
+                <div 
+                  key={idx}
+                  className={`w-2 h-2 rounded-full ${
+                    auction.status === 'LIVE' ? 'bg-destructive animate-pulse' :
+                    auction.status === 'STARTING_SOON' ? 'bg-orange-500' :
+                    auction.status === 'UPCOMING' ? 'bg-primary' :
+                    'bg-muted-foreground'
+                  }`}
+                />
+              ))}
+              {dayAuctions.length > 2 && (
+                <div className="text-xs text-muted-foreground">+{dayAuctions.length - 2}</div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Trailing empty cells to complete the last week row (keeps layout consistent)
+    const totalCells = firstDay + daysInMonth;
+    const trailing = (7 - (totalCells % 7)) % 7;
+    for (let i = 0; i < trailing; i++) {
+      list.push(<div key={`empty-end-${i}`} className="h-12" />);
+    }
+
+    return list;
+  }, [currentDate, getAuctionsForDate, onDateSelect, today]);
+
   return (
     <Card>
       <CardHeader>
@@ -104,13 +115,25 @@ export const AuctionCalendar: React.FC<AuctionCalendarProps> = ({ auctions, onDa
             Auction Calendar
           </CardTitle>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              type="button" 
+              aria-label="Previous month"
+              onClick={() => navigateMonth('prev')}
+            >
               <ChevronLeft size={16} />
             </Button>
             <span className="font-medium min-w-[120px] text-center">
               {monthName} {year}
             </span>
-            <Button variant="outline" size="sm" onClick={() => navigateMonth('next')}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              type="button" 
+              aria-label="Next month"
+              onClick={() => navigateMonth('next')}
+            >
               <ChevronRight size={16} />
             </Button>
           </div>
