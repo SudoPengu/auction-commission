@@ -1,9 +1,12 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Eye, Users, Timer, PhilippinePeso } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import EntrancePayment from './EntrancePayment';
 
 interface AuctionEvent {
   id: number;
@@ -25,8 +28,58 @@ interface LiveAuctionHeroProps {
 }
 
 const LiveAuctionHero: React.FC<LiveAuctionHeroProps> = ({ auction, onJoin }) => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const isBidder = profile?.role === 'bidder';
+  const [hasAccess, setHasAccess] = useState(false);
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
+
+  useEffect(() => {
+    const checkAccess = async () => {
+      if (!user || !isBidder) {
+        setIsCheckingAccess(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('auction_entrance_fees')
+          .select('payment_status, access_expires_at')
+          .eq('auction_id', auction.id)
+          .eq('bidder_id', user.id)
+          .eq('payment_status', 'paid')
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error checking access:', error);
+          setHasAccess(false);
+        } else if (data) {
+          // Check if access hasn't expired
+          const now = new Date();
+          const expiresAt = new Date(data.access_expires_at);
+          setHasAccess(now < expiresAt);
+        } else {
+          setHasAccess(false);
+        }
+      } catch (error) {
+        console.error('Error checking access:', error);
+        setHasAccess(false);
+      } finally {
+        setIsCheckingAccess(false);
+      }
+    };
+
+    checkAccess();
+  }, [user, isBidder, auction.id]);
+
+  const handlePaymentSuccess = () => {
+    setHasAccess(true);
+  };
+
+  const handleJoinAuction = () => {
+    if (hasAccess || !isBidder) {
+      onJoin(auction.id);
+    }
+  };
 
   return (
     <Card className="relative overflow-hidden bg-gradient-to-r from-primary/10 via-primary/5 to-background border-primary/20">
@@ -88,27 +141,41 @@ const LiveAuctionHero: React.FC<LiveAuctionHeroProps> = ({ auction, onJoin }) =>
                 </div>
               </div>
 
-              {isBidder && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 text-amber-800 mb-2">
-                    <PhilippinePeso className="h-5 w-5" />
-                    <span className="font-semibold">Entrance Fee Required</span>
-                  </div>
-                  <p className="text-sm text-amber-700">
-                    Pay ₱3,000 entrance fee to join this auction. This amount will be added to your bidding balance.
-                  </p>
-                </div>
+              {/* Payment Section for Bidders */}
+              {isBidder && !isCheckingAccess && (
+                <EntrancePayment
+                  auctionId={auction.id}
+                  auctionTitle={auction.title}
+                  onPaymentSuccess={handlePaymentSuccess}
+                  hasAccess={hasAccess}
+                />
               )}
             </div>
 
             <div className="mt-6">
-              <Button 
-                size="lg" 
-                className="w-full text-lg py-6"
-                onClick={() => onJoin(auction.id)}
-              >
-                {isBidder ? 'Pay Entrance Fee & Join Auction' : 'Join Auction'}
-              </Button>
+              {isBidder ? (
+                <Button 
+                  size="lg" 
+                  className="w-full text-lg py-6"
+                  onClick={handleJoinAuction}
+                  disabled={!hasAccess || isCheckingAccess}
+                >
+                  {isCheckingAccess 
+                    ? 'Checking Access...' 
+                    : hasAccess 
+                      ? 'Join Auction' 
+                      : 'Pay Entrance Fee First'
+                  }
+                </Button>
+              ) : (
+                <Button 
+                  size="lg" 
+                  className="w-full text-lg py-6"
+                  onClick={handleJoinAuction}
+                >
+                  Join Auction
+                </Button>
+              )}
             </div>
           </div>
         </div>

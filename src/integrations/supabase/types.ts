@@ -20,10 +20,17 @@ export type Database = {
           access_token: string
           auction_id: string
           bidder_id: string
+          checkout_url: string | null
           created_at: string
+          currency: string
           fee_amount: number
           id: string
+          paid_at: string | null
           payment_status: string
+          provider: string | null
+          provider_payment_id: string | null
+          provider_session_id: string | null
+          redeemed_at: string | null
           updated_at: string
         }
         Insert: {
@@ -31,10 +38,17 @@ export type Database = {
           access_token?: string
           auction_id: string
           bidder_id: string
+          checkout_url?: string | null
           created_at?: string
+          currency?: string
           fee_amount: number
           id?: string
+          paid_at?: string | null
           payment_status?: string
+          provider?: string | null
+          provider_payment_id?: string | null
+          provider_session_id?: string | null
+          redeemed_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -42,10 +56,17 @@ export type Database = {
           access_token?: string
           auction_id?: string
           bidder_id?: string
+          checkout_url?: string | null
           created_at?: string
+          currency?: string
           fee_amount?: number
           id?: string
+          paid_at?: string | null
           payment_status?: string
+          provider?: string | null
+          provider_payment_id?: string | null
+          provider_session_id?: string | null
+          redeemed_at?: string | null
           updated_at?: string
         }
         Relationships: [
