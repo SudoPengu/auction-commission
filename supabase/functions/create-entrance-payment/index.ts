@@ -9,26 +9,67 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('=== CREATE ENTRANCE PAYMENT FUNCTION START ===');
+  console.log('Method:', req.method);
+  console.log('Headers:', Object.fromEntries(req.headers.entries()));
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing Supabase environment variables');
+      throw new Error('Server configuration error');
+    }
 
-    const authHeader = req.headers.get('Authorization')!;
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Validate and get user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('No authorization header provided');
+      throw new Error('Authorization header required');
+    }
+
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user } } = await supabaseClient.auth.getUser(token);
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
 
-    if (!user) {
+    if (userError || !user) {
+      console.error('User authentication failed:', userError);
       throw new Error('Unauthorized');
     }
 
-    const { auction_id } = await req.json();
-    console.log('Creating entrance payment for auction:', auction_id);
+    console.log('Authenticated user:', user.id);
+
+    // Parse and validate request body
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
+      throw new Error('Invalid request body');
+    }
+
+    const { auction_id } = requestBody;
+    
+    if (!auction_id) {
+      console.error('Missing auction_id in request body');
+      throw new Error('auction_id is required');
+    }
+
+    // Validate auction_id is a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(auction_id)) {
+      console.error('Invalid auction_id format:', auction_id);
+      throw new Error('auction_id must be a valid UUID');
+    }
+
+    console.log('Creating entrance payment for auction:', auction_id, 'user:', user.id);
 
     // Check if user already has a paid entrance for this auction
     const { data: existingEntrance, error: checkError } = await supabaseClient
@@ -66,11 +107,14 @@ serve(async (req) => {
       throw new Error('Auction not found');
     }
 
-    // Create PayMongo Payment Intent
+    // Get PayMongo secret key
     const paymongoSecretKey = Deno.env.get('SECRET_KEY');
     if (!paymongoSecretKey) {
-      throw new Error('PayMongo secret key not configured');
+      console.error('PayMongo SECRET_KEY environment variable not found');
+      throw new Error('Payment provider not configured');
     }
+
+    console.log('PayMongo secret key found, creating payment intent...');
 
     const paymentIntentData = {
       amount: 300000, // 3000 PHP in centavos
@@ -91,6 +135,9 @@ serve(async (req) => {
       }
     };
 
+    console.log('Sending request to PayMongo API...');
+    console.log('PayMongo request data:', JSON.stringify(paymentIntentData, null, 2));
+
     const paymongoResponse = await fetch('https://api.paymongo.com/v1/payment_intents', {
       method: 'POST',
       headers: {
@@ -100,14 +147,18 @@ serve(async (req) => {
       body: JSON.stringify({ data: { attributes: paymentIntentData } }),
     });
 
+    console.log('PayMongo response status:', paymongoResponse.status);
+
     if (!paymongoResponse.ok) {
       const errorData = await paymongoResponse.text();
-      console.error('PayMongo API error:', errorData);
-      throw new Error('Payment provider error');
+      console.error('PayMongo API error response:', errorData);
+      console.error('PayMongo response status:', paymongoResponse.status);
+      throw new Error(`Payment provider error: ${paymongoResponse.status} - ${errorData}`);
     }
 
     const paymentIntent = await paymongoResponse.json();
-    console.log('Created PayMongo payment intent:', paymentIntent.data.id);
+    console.log('Successfully created PayMongo payment intent:', paymentIntent.data.id);
+    console.log('Payment intent details:', JSON.stringify(paymentIntent.data, null, 2));
 
     // Store the entrance fee record
     const { data: entranceRecord, error: insertError } = await supabaseClient
@@ -131,19 +182,32 @@ serve(async (req) => {
       throw new Error('Failed to create entrance record');
     }
 
-    return new Response(JSON.stringify({
+    const responseData = {
       payment_intent_id: paymentIntent.data.id,
       checkout_url: paymentIntent.data.attributes.next_action?.redirect?.url,
       client_key: paymentIntent.data.attributes.client_key,
       entrance_record_id: entranceRecord.id
-    }), {
+    };
+
+    console.log('Successfully created entrance payment record:', entranceRecord.id);
+    console.log('Returning response data:', JSON.stringify(responseData, null, 2));
+    console.log('=== CREATE ENTRANCE PAYMENT FUNCTION END (SUCCESS) ===');
+
+    return new Response(JSON.stringify(responseData), {
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in create-entrance-payment:', error);
+    console.error('=== CREATE ENTRANCE PAYMENT FUNCTION ERROR ===');
+    console.error('Error details:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('=== CREATE ENTRANCE PAYMENT FUNCTION END (ERROR) ===');
+    
     return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error' 
+      error: error.message || 'Internal server error',
+      details: error.toString()
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

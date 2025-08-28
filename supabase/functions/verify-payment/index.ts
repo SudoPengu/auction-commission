@@ -9,48 +9,90 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('=== VERIFY PAYMENT FUNCTION START ===');
+  console.log('Method:', req.method);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing Supabase environment variables');
+      throw new Error('Server configuration error');
+    }
 
-    const authHeader = req.headers.get('Authorization')!;
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Validate and get user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('No authorization header provided');
+      throw new Error('Authorization header required');
+    }
+
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user } } = await supabaseClient.auth.getUser(token);
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
 
-    if (!user) {
+    if (userError || !user) {
+      console.error('User authentication failed:', userError);
       throw new Error('Unauthorized');
     }
 
-    const { payment_intent_id } = await req.json();
-    console.log('Verifying payment intent:', payment_intent_id);
+    console.log('Authenticated user:', user.id);
 
-    // Get the PayMongo payment intent status
-    const paymongoSecretKey = Deno.env.get('SECRET_KEY');
-    if (!paymongoSecretKey) {
-      throw new Error('PayMongo secret key not configured');
+    // Parse and validate request body
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
+      throw new Error('Invalid request body');
     }
 
+    const { payment_intent_id } = requestBody;
+    
+    if (!payment_intent_id) {
+      console.error('Missing payment_intent_id in request body');
+      throw new Error('payment_intent_id is required');
+    }
+
+    console.log('Verifying payment intent:', payment_intent_id, 'for user:', user.id);
+
+    // Get PayMongo secret key
+    const paymongoSecretKey = Deno.env.get('SECRET_KEY');
+    if (!paymongoSecretKey) {
+      console.error('PayMongo SECRET_KEY environment variable not found');
+      throw new Error('Payment provider not configured');
+    }
+
+    console.log('Fetching payment status from PayMongo...');
+
     const paymongoResponse = await fetch(`https://api.paymongo.com/v1/payment_intents/${payment_intent_id}`, {
+      method: 'GET',
       headers: {
         'Authorization': `Basic ${btoa(paymongoSecretKey + ':')}`,
+        'Content-Type': 'application/json',
       },
     });
 
+    console.log('PayMongo verification response status:', paymongoResponse.status);
+
     if (!paymongoResponse.ok) {
       const errorData = await paymongoResponse.text();
-      console.error('PayMongo API error:', errorData);
-      throw new Error('Payment verification failed');
+      console.error('PayMongo verification API error:', errorData);
+      console.error('PayMongo response status:', paymongoResponse.status);
+      throw new Error(`Payment verification failed: ${paymongoResponse.status} - ${errorData}`);
     }
 
     const paymentIntent = await paymongoResponse.json();
     const status = paymentIntent.data.attributes.status;
     console.log('PayMongo payment status:', status);
+    console.log('PayMongo payment intent details:', JSON.stringify(paymentIntent.data.attributes, null, 2));
 
     // Find the entrance record
     const { data: entranceRecord, error: findError } = await supabaseClient
@@ -91,19 +133,32 @@ serve(async (req) => {
       throw new Error('Failed to update entrance record');
     }
 
-    return new Response(JSON.stringify({
+    const responseData = {
       payment_status: updatedRecord.payment_status,
       has_access: updatedRecord.payment_status === 'paid',
       payment_intent_status: status,
       entrance_record: updatedRecord
-    }), {
+    };
+
+    console.log('Successfully verified payment and updated record');
+    console.log('Returning response data:', JSON.stringify(responseData, null, 2));
+    console.log('=== VERIFY PAYMENT FUNCTION END (SUCCESS) ===');
+
+    return new Response(JSON.stringify(responseData), {
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in verify-payment:', error);
+    console.error('=== VERIFY PAYMENT FUNCTION ERROR ===');
+    console.error('Error details:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('=== VERIFY PAYMENT FUNCTION END (ERROR) ===');
+    
     return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error' 
+      error: error.message || 'Internal server error',
+      details: error.toString()
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
