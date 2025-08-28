@@ -8,111 +8,110 @@ import { LiveAuctionCard, AuctionEvent } from '@/components/auction/LiveAuctionC
 import LiveAuctionHero from '@/components/auction/LiveAuctionHero';
 import { AuctionCalendar } from '@/components/auction/AuctionCalendar';
 import { toast } from "@/hooks/use-toast";
+import { supabase } from '@/integrations/supabase/client';
 import POS from './POS';
 
 const LiveAuctions: React.FC = () => {
   const { profile } = useAuth();
   const isStaffOrAdmin = profile?.role && ['staff', 'admin', 'super-admin', 'auction-manager'].includes(profile.role);
   
-  // Enhanced mock auction events with the new features
-  const [auctionEvents] = useState<AuctionEvent[]>([
-    {
-      id: 1,
-      title: 'Rare Vintage Guitars Auction',
-      theme_title: 'Musical Treasures Collection',
-      date: 'June 15, 2025',
-      time: '3:00 PM - 6:00 PM',
-      location: 'Main Gallery',
-      status: 'LIVE',
-      itemCount: 47,
-      viewer_count: 234,
-      total_bids: 128,
-      entrance_fee: 3000,
-      platform: 'youtube',
-      stream_url: 'https://youtube.com/watch?v=example'
-    },
-    {
-      id: 2,
-      title: 'Designer Handbags Bonanza',
-      theme_title: 'Luxury Fashion Week',
-      date: 'June 15, 2025',
-      time: '7:00 PM - 9:00 PM',
-      location: 'East Wing',
-      status: 'STARTING_SOON',
-      itemCount: 89,
-      viewer_count: 67,
-      entrance_fee: 3000,
-      platform: 'obs'
-    },
-    {
-      id: 3,
-      title: 'Antique Furniture Showcase',
-      theme_title: 'Heritage Collection',
-      date: 'June 16, 2025',
-      time: '2:00 PM - 5:00 PM',
-      location: 'West Hall',
-      status: 'UPCOMING',
-      itemCount: 156,
-      entrance_fee: 3000
-    },
-    {
-      id: 4,
-      title: 'Art & Collectibles Gala',
-      theme_title: 'Masterpieces Unveiled',
-      date: 'June 14, 2025',
-      time: '1:00 PM - 4:00 PM',
-      location: 'Grand Hall',
-      status: 'COMPLETED',
-      itemCount: 203,
-      viewer_count: 567,
-      total_bids: 892,
-      revenue: '127450',
-      duration: '3h 15m'
-    },
-    {
-      id: 5,
-      title: 'Electronics Clearance',
-      theme_title: 'Tech Refresh Sale',
-      date: 'June 13, 2025',
-      time: '10:00 AM - 2:00 PM',
-      location: 'Tech Center',
-      status: 'COMPLETED',
-      itemCount: 324,
-      viewer_count: 189,
-      total_bids: 456,
-      revenue: '89230',
-      duration: '4h 0m'
-    }
-  ]);
+  const [auctionEvents, setAuctionEvents] = useState<AuctionEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAuctions = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('auction_events')
+          .select('*')
+          .order('start_date', { ascending: true });
+
+        if (error) {
+          console.error('Error fetching auctions:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load auctions. Please try again.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Map Supabase data to UI format
+        const mappedAuctions: AuctionEvent[] = (data || []).map(auction => ({
+          id: auction.id, // Keep as UUID string
+          title: auction.title || 'Untitled Auction',
+          theme_title: auction.theme_title || undefined,
+          date: new Date(auction.start_date).toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          }),
+          time: `${new Date(auction.start_date).toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true 
+          })} - ${new Date(auction.end_date).toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true 
+          })}`,
+          status: auction.status === 'live' ? 'LIVE' : 
+                 auction.status === 'upcoming' ? 'UPCOMING' : 'COMPLETED',
+          itemCount: Math.floor(Math.random() * 200) + 50, // Mock data for now
+          viewer_count: auction.viewer_count || 0,
+          total_bids: auction.total_bids || 0,
+          revenue: auction.revenue?.toString() || '0',
+          entrance_fee: auction.entrance_fee ? Number(auction.entrance_fee) : 3000,
+          platform: 'youtube', // Mock data
+          duration: auction.status === 'completed' ? 
+            `${Math.floor(Math.random() * 4) + 1}h ${Math.floor(Math.random() * 60)}m` : 
+            undefined
+        }));
+
+        setAuctionEvents(mappedAuctions);
+      } catch (error) {
+        console.error('Error fetching auctions:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load auctions. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAuctions();
+  }, []);
 
   const liveAuctions = auctionEvents.filter(a => a.status === 'LIVE');
   const startingSoonAuctions = auctionEvents.filter(a => a.status === 'STARTING_SOON');
   const upcomingAuctions = auctionEvents.filter(a => a.status === 'UPCOMING');
   const recentlyEndedAuctions = auctionEvents.filter(a => a.status === 'COMPLETED').slice(0, 3);
 
-  const handleStartAuction = (id: number) => {
+  const handleStartAuction = (id: string) => {
     toast({
       title: "Auction Started",
-      description: `Auction ${id} is now live!`,
+      description: `Auction is now live!`,
     });
   };
 
-  const handlePauseAuction = (id: number) => {
+  const handlePauseAuction = (id: string) => {
     toast({
       title: "Auction Paused",
-      description: `Auction ${id} has been paused.`,
+      description: `Auction has been paused.`,
     });
   };
 
-  const handleStopAuction = (id: number) => {
+  const handleStopAuction = (id: string) => {
     toast({
       title: "Auction Stopped",
-      description: `Auction ${id} has been stopped and completed.`,
+      description: `Auction has been stopped and completed.`,
       variant: "destructive"
     });
   };
 
-  const handleJoinAuction = (id: number) => {
+  const handleJoinAuction = (id: string) => {
     const auction = auctionEvents.find(a => a.id === id);
     if (profile?.role === 'bidder') {
       toast({
@@ -147,6 +146,17 @@ const LiveAuctions: React.FC = () => {
   };
 
   const stats = getTotalStats();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading auctions...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-6">

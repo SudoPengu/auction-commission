@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useStopAuctionTimer } from '@/hooks/useStopAuctionTimer';
 
 export interface AuctionEvent {
-  id: number;
+  id: string; // Changed to string UUID
   title: string;
   theme_title?: string;
   date: string;
@@ -26,10 +26,10 @@ export interface AuctionEvent {
 
 interface LiveAuctionCardProps {
   auction: AuctionEvent;
-  onStart?: (id: number) => void;
-  onPause?: (id: number) => void;
-  onStop?: (id: number) => void;
-  onJoin?: (id: number) => void;
+  onStart?: (id: string) => void;
+  onPause?: (id: string) => void;
+  onStop?: (id: string) => void;
+  onJoin?: (id: string) => void;
 }
 
 export const LiveAuctionCard: React.FC<LiveAuctionCardProps> = ({

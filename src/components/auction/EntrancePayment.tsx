@@ -9,7 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface EntrancePaymentProps {
-  auctionId: number;
+  auctionId: string; // Changed to string UUID
   auctionTitle: string;
   onPaymentSuccess: () => void;
   hasAccess?: boolean;
@@ -35,13 +35,27 @@ const EntrancePayment: React.FC<EntrancePaymentProps> = ({
       return;
     }
 
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(auctionId)) {
+      toast({
+        title: "Invalid auction_id",
+        description: "Please contact support if this problem persists.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsProcessing(true);
     setPaymentStatus('pending');
 
     try {
+      const payload = { auction_id: auctionId };
+      console.log('Sending payment request with payload:', payload);
+      
       // Create payment intent
       const { data: paymentData, error } = await supabase.functions.invoke('create-entrance-payment', {
-        body: { auction_id: auctionId }
+        body: payload
       });
 
       if (error) {
@@ -223,6 +237,11 @@ const EntrancePayment: React.FC<EntrancePaymentProps> = ({
         <p className="text-xs text-gray-500 text-center">
           Access expires when the auction ends. Credits cannot be transferred between auctions.
         </p>
+        
+        {/* Debug info - remove in production */}
+        <div className="mt-2 p-2 bg-gray-100 rounded text-xs text-gray-600">
+          <p><strong>Auction ID:</strong> {auctionId}</p>
+        </div>
       </CardContent>
     </Card>
   );

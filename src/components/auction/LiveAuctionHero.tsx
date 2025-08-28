@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import EntrancePayment from './EntrancePayment';
 
 interface AuctionEvent {
-  id: number;
+  id: string; // Changed to string UUID
   title: string;
   theme_title?: string;
   date: string;
@@ -24,7 +24,7 @@ interface AuctionEvent {
 
 interface LiveAuctionHeroProps {
   auction: AuctionEvent;
-  onJoin: (auctionId: number) => void;
+  onJoin: (auctionId: string) => void;
 }
 
 const LiveAuctionHero: React.FC<LiveAuctionHeroProps> = ({ auction, onJoin }) => {
@@ -44,7 +44,7 @@ const LiveAuctionHero: React.FC<LiveAuctionHeroProps> = ({ auction, onJoin }) =>
         const { data, error } = await supabase
           .from('auction_entrance_fees')
           .select('payment_status, access_expires_at')
-          .eq('auction_id', auction.id.toString())
+          .eq('auction_id', auction.id)
           .eq('bidder_id', user.id)
           .eq('payment_status', 'paid')
           .maybeSingle();
