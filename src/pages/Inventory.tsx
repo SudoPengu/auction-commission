@@ -11,10 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Package, QrCode, Tags } from 'lucide-react';
 
 const Inventory = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [conditionFilter, setConditionFilter] = useState<string>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [filters, setFilters] = useState({
+    status: '',
+    category: '',
+    condition: '',
+    storageExpiry: ''
+  });
 
   const { data: items = [], isLoading, refetch } = useQuery({
     queryKey: ['inventory-items'],
@@ -29,27 +31,43 @@ const Inventory = () => {
     }
   });
 
+  const { data: categories = [] } = useQuery({
+    queryKey: ['inventory-categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('inventory_categories')
+        .select('name')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
   const filteredItems = useMemo(() => {
     return items.filter(item => {
-      const matchesSearch = !searchTerm || 
-        item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.category_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = !filters.status || item.status === filters.status;
+      const matchesCondition = !filters.condition || item.condition === filters.condition;
+      const matchesCategory = !filters.category || item.category_name === filters.category;
+      
+      let matchesStorageExpiry = true;
+      if (filters.storageExpiry === 'expired') {
+        matchesStorageExpiry = item.storage_expires_at && new Date(item.storage_expires_at) < new Date();
+      } else if (filters.storageExpiry === 'expiring_soon') {
+        const now = new Date();
+        const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+        matchesStorageExpiry = item.storage_expires_at && 
+          new Date(item.storage_expires_at) >= now && 
+          new Date(item.storage_expires_at) <= threeDaysFromNow;
+      }
 
-      const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-      const matchesCondition = conditionFilter === 'all' || item.condition === conditionFilter;
-      const matchesCategory = categoryFilter === 'all' || item.category_name === categoryFilter;
-
-      return matchesSearch && matchesStatus && matchesCondition && matchesCategory;
+      return matchesStatus && matchesCondition && matchesCategory && matchesStorageExpiry;
     });
-  }, [items, searchTerm, statusFilter, conditionFilter, categoryFilter]);
+  }, [items, filters]);
 
-  const handleStatusFilter = (status: string) => {
-    setStatusFilter(status as 'pending_auction' | 'auctioned_sold' | 'auctioned_unsold' | 'walk_in_available' | 'locked' | 'all');
-  };
-
-  const handleConditionFilter = (condition: string) => {
-    setConditionFilter(condition as 'brand_new' | 'like_new' | 'used_good' | 'used_fair' | 'damaged' | 'all');
+  const handleQRScan = (itemId: string) => {
+    // Handle QR scan - for now just refetch the data
+    refetch();
   };
 
   return (
@@ -76,16 +94,9 @@ const Inventory = () => {
 
         <TabsContent value="inventory" className="space-y-6">
           <InventoryFilters
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            statusFilter={statusFilter}
-            onStatusChange={handleStatusFilter}
-            conditionFilter={conditionFilter}
-            onConditionChange={handleConditionFilter}
-            categoryFilter={categoryFilter}
-            onCategoryChange={setCategoryFilter}
-            totalItems={items.length}
-            filteredItems={filteredItems.length}
+            filters={filters}
+            onFiltersChange={setFilters}
+            categories={categories}
           />
           
           <InventoryGrid 
@@ -96,7 +107,7 @@ const Inventory = () => {
         </TabsContent>
 
         <TabsContent value="scanner">
-          <QRScanner onScan={refetch} />
+          <QRScanner onScan={handleQRScan} onClose={() => {}} />
         </TabsContent>
 
         <TabsContent value="labels">
