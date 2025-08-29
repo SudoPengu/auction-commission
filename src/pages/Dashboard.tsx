@@ -6,8 +6,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { QrCode, ScanLine, Activity, BarChart3, TrendingUp, Info } from 'lucide-react';
-import POS from './POS';
+import { QrCode, ScanLine, BarChart3, TrendingUp, Info } from 'lucide-react';
 import TimeFrameSelector from '../components/dashboard/TimeFrameSelector';
 import MetricCards from '../components/dashboard/MetricCards';
 import AnalyticsTabs from '../components/dashboard/AnalyticsTabs';
@@ -84,24 +83,6 @@ const Dashboard: React.FC = () => {
         </CardContent>
       </Card>
       
-      {/* Live Operations - POS Section */}
-      <Card className="border-l-4 border-l-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 hover:shadow-md transition-all duration-300">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
-              <Activity className="h-5 w-5" />
-              Live Point of Sale
-            </CardTitle>
-            <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 animate-pulse">
-              ● Live
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <POS />
-        </CardContent>
-      </Card>
-      
       {canViewAnalytics ? (
         <>
           {/* Analytics Section */}
@@ -147,10 +128,6 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded"></div>
               <span className="text-muted-foreground">QR Operations</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-emerald-500 rounded"></div>
-              <span className="text-muted-foreground">Live Systems</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-blue-500 rounded"></div>

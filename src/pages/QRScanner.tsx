@@ -7,7 +7,6 @@ import { QrCode, ScanLine, Camera, FileText, Activity, Info, Zap, Clock } from '
 import { useAuth } from '../contexts/AuthContext';
 import { QRScannerModal } from '@/components/QRScannerModal';
 import { GenerateLabelsModal } from '@/components/GenerateLabelsModal';
-import POS from './POS';
 
 const QRScanner: React.FC = () => {
   const { profile } = useAuth();
@@ -41,24 +40,6 @@ const QRScanner: React.FC = () => {
             <Clock className="h-4 w-4" />
             <span>Average scan time: 2.3 seconds</span>
           </div>
-        </CardContent>
-      </Card>
-      
-      {/* Live Operations - POS Section */}
-      <Card className="border-l-4 border-l-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
-              <Activity className="h-5 w-5" />
-              Live Point of Sale
-            </CardTitle>
-            <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 animate-pulse">
-              ● Live
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <POS />
         </CardContent>
       </Card>
       
@@ -153,10 +134,6 @@ const QRScanner: React.FC = () => {
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-amber-500 rounded"></div>
               <span className="text-muted-foreground">Label Generation</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-emerald-500 rounded"></div>
-              <span className="text-muted-foreground">Live Systems</span>
             </div>
           </div>
         </CardContent>

@@ -9,7 +9,6 @@ import LiveAuctionHero from '@/components/auction/LiveAuctionHero';
 import { AuctionCalendar } from '@/components/auction/AuctionCalendar';
 import { toast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
-import POS from './POS';
 import BidderWelcomeBanner from '../components/bidder/BidderWelcomeBanner';
 import { BidderFriendlyStats } from '../components/profile/BidderFriendlyStats';
 
@@ -265,9 +264,6 @@ const LiveAuctions: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* POS Floating Panel - Only for staff/admin */}
-      {!isBidder && <POS />}
 
       {/* Stats Dashboard - Different for bidders */}
       {isBidder ? (

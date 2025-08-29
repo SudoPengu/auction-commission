@@ -7,7 +7,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Filter, UserCircle, Eye, Phone, Mail } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import POS from './POS';
 
 const BidderProfiles: React.FC = () => {
   const { profile } = useAuth();
@@ -85,9 +84,6 @@ const BidderProfiles: React.FC = () => {
           </p>
         </div>
       </div>
-      
-      {/* POS Floating Panel - Only for staff/admin */}
-      {profile?.role !== 'bidder' && <POS />}
       
       <Card>
         <CardHeader>

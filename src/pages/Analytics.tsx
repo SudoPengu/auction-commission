@@ -2,7 +2,6 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '../contexts/AuthContext';
-import POS from './POS';
 import CategoryPieChart from '../components/analytics/charts/CategoryPieChart';
 import ProductBarChart from '../components/analytics/charts/ProductBarChart';
 
@@ -20,9 +19,6 @@ const Analytics: React.FC = () => {
           </p>
         </div>
       </div>
-      
-      {/* POS Floating Panel */}
-      <POS />
       
       {canViewAnalytics ? (
         <Card>

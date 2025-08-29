@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { CalendarDays, Plus, Users, Clock, Tag, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import POS from './POS';
 
 const AuctionEvents: React.FC = () => {
   const { profile } = useAuth();
@@ -55,9 +54,6 @@ const AuctionEvents: React.FC = () => {
           </p>
         </div>
       </div>
-      
-      {/* POS Floating Panel */}
-      <POS />
       
       <div className="flex justify-between items-center">
         <div>
