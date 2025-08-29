@@ -14,7 +14,7 @@ const TimeFrameSelector: React.FC<TimeFrameSelectorProps> = ({ timeFrame, setTim
       {(['1D', '1W', '1M', '3M', '1Y'] as TimeFrame[]).map(time => (
         <button
           key={time}
-          className={`px-3 py-1 rounded ${timeFrame === time ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}
+          className={`px-3 py-1 rounded ${timeFrame === time ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}
           onClick={() => setTimeFrame(time)}
         >
           {time}
