@@ -28,14 +28,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       navigate('/login');
       return;
     }
-    
-    // Show welcome toast when authenticated and not on login page
-    if (isAuthenticated && location.pathname !== '/login') {
-      toast({
-        title: "Welcome back!",
-        description: `Logged in as ${profile?.full_name || 'User'}`,
-      });
-    }
   }, [isAuthenticated, profile, navigate, location.pathname]);
   
   const toggleSidebar = () => {

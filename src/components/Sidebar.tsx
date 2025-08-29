@@ -24,10 +24,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const handleLogout = async () => {
     try {
       await logout();
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out"
-      });
       navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);

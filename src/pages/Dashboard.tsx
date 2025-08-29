@@ -20,11 +20,6 @@ const Dashboard: React.FC = () => {
   
   useEffect(() => {
     console.log("Dashboard mounted, user profile:", profile);
-    
-    toast({
-      title: "Dashboard Loaded",
-      description: `Welcome ${profile?.full_name || 'User'}!`,
-    });
   }, [profile]);
   
   const canViewAnalytics = profile && ['admin', 'super-admin'].includes(profile.role);
