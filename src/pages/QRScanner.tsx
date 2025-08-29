@@ -2,11 +2,10 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { QrCode, ScanLine, TestTube } from 'lucide-react';
+import { QrCode, ScanLine } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { QRScannerModal } from '@/components/QRScannerModal';
 import { GenerateLabelsModal } from '@/components/GenerateLabelsModal';
-import { QRWorkflowTest } from '@/components/QRWorkflowTest';
 import POS from './POS';
 
 const QRScanner: React.FC = () => {
@@ -63,11 +62,6 @@ const QRScanner: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-      </div>
-      
-      {/* Smoke Test Component */}
-      <div className="mt-8">
-        <QRWorkflowTest />
       </div>
       
       {/* Modals */}
