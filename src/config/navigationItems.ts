@@ -1,4 +1,3 @@
-
 import { 
   Home, 
   Package2, 
@@ -18,6 +17,12 @@ export const navigationItems: NavItem[] = [
     roles: ['staff', 'admin', 'super-admin', 'auction-manager', 'bidder']
   },
   {
+    name: 'Inventory',
+    icon: Package2,
+    path: '/inventory',
+    roles: ['staff', 'admin', 'super-admin']
+  },
+  {
     name: 'POS',
     icon: ShoppingCart,
     path: '/pos',
@@ -34,12 +39,6 @@ export const navigationItems: NavItem[] = [
     icon: UserCircle,
     path: '/bidders',
     roles: ['staff', 'admin', 'super-admin', 'auction-manager']
-  },
-  {
-    name: 'Inventory',
-    icon: Package2,
-    path: '/inventory',
-    roles: ['admin', 'super-admin']
   },
   {
     name: 'Analytics',
