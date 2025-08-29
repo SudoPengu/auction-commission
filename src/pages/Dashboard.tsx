@@ -55,27 +55,27 @@ const Dashboard: React.FC = () => {
         className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 cursor-pointer group"
         onClick={() => navigate('/qr-scanner')}
       >
-        <CardContent className="p-12">
+        <CardContent className="p-8">
           {/* Decorative background shapes */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-xl transform translate-x-16 -translate-y-16" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full blur-lg transform -translate-x-8 translate-y-8" />
           
-          <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-8">
-            <div className="flex items-center gap-6 flex-1">
-              <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm group-hover:bg-white/30 transition-colors">
-                <QrCode className="h-12 w-12 text-white" />
+          <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-4 flex-1">
+              <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm group-hover:bg-white/30 transition-colors">
+                <QrCode className="h-10 w-10 text-white" />
               </div>
               <div className="text-white">
-                <h2 className="text-3xl font-bold mb-3 group-hover:text-white/90 transition-colors">Faster intake with QR scanning</h2>
-                <p className="text-white/90 text-xl leading-relaxed">Scan items to create and manage inventory in seconds.</p>
+                <h2 className="text-2xl font-bold mb-2 group-hover:text-white/90 transition-colors">Faster intake with QR scanning</h2>
+                <p className="text-white/90 text-lg leading-relaxed">Scan items to create and manage inventory in seconds.</p>
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
-              <ScanLine className="h-8 w-8 text-white/80 animate-pulse group-hover:text-white transition-colors" />
+            <div className="flex items-center gap-3">
+              <ScanLine className="h-6 w-6 text-white/80 animate-pulse group-hover:text-white transition-colors" />
               <div className="text-right">
-                <div className="text-white/90 text-lg font-semibold">Click anywhere to</div>
-                <div className="text-white text-2xl font-bold">Start Scanning</div>
+                <div className="text-white/90 text-sm font-semibold">Click anywhere to</div>
+                <div className="text-white text-lg font-bold">Start Scanning</div>
               </div>
             </div>
           </div>
