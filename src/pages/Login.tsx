@@ -213,8 +213,9 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-sky-50">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-sky-50 via-sky-100 to-sky-200 backdrop-blur-sm relative">
+      <div className="absolute inset-0 bg-gradient-to-br from-sky-primary/5 via-sky-secondary/10 to-sky-accent/15"></div>
+      <Card className="w-full max-w-md relative z-10 backdrop-blur-sm shadow-xl">
         <CardHeader className="space-y-4 text-center">
           <div className="mx-auto">
             <Logo size="large" />
