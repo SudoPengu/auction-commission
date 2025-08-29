@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -67,10 +66,10 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({
         throw new Error(confirmResult.error || 'QR confirmation failed');
       }
 
-      // Then update status
+      // Then update status - cast to proper type
       const { data, error } = await supabase.rpc('update_inventory_status', {
         p_item_id: item.id,
-        p_new_status: newStatus
+        p_new_status: newStatus as 'pending_auction' | 'auctioned_sold' | 'auctioned_unsold' | 'walk_in_available' | 'locked'
       });
 
       if (error) throw error;
