@@ -84,37 +84,19 @@ const Dashboard: React.FC = () => {
       </Card>
       
       {canViewAnalytics ? (
-        <>
-          {/* Analytics Section */}
-          <Card className="border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                <BarChart3 className="h-5 w-5" />
-                Business Analytics
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0 space-y-6">
-              <TimeFrameSelector timeFrame={timeFrame} setTimeFrame={setTimeFrame} />
-              <MetricCards timeFrame={timeFrame} />
-              <AnalyticsTabs getChartLabel={getChartLabel} timeFrame={timeFrame} />
-            </CardContent>
-          </Card>
-        </>
+        <Card>
+          <CardContent className="pt-6 space-y-6">
+            <TimeFrameSelector timeFrame={timeFrame} setTimeFrame={setTimeFrame} />
+            <MetricCards timeFrame={timeFrame} />
+            <AnalyticsTabs getChartLabel={getChartLabel} timeFrame={timeFrame} />
+          </CardContent>
+        </Card>
       ) : (
-        <>
-          {/* Recent Activity Section */}
-          <Card className="border-l-4 border-l-orange-500 bg-orange-50/50 dark:bg-orange-950/20">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
-                <TrendingUp className="h-5 w-5" />
-                Recent Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <RecentActivity />
-            </CardContent>
-          </Card>
-        </>
+        <Card>
+          <CardContent className="pt-6">
+            <RecentActivity />
+          </CardContent>
+        </Card>
       )}
       
       {/* Color Legend */}

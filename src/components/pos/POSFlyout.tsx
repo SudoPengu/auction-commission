@@ -63,8 +63,15 @@ const POSFlyout: React.FC = () => {
   return (
     <div className="fixed inset-0 z-30 pointer-events-none">
       <div className="absolute inset-0 bg-black/20 pointer-events-auto" onClick={handleClose} />
-      <div className="absolute right-0 top-0 bottom-0 pointer-events-auto">
+      <div className="absolute inset-0 pointer-events-auto">
         <ResizablePanelGroup direction="horizontal" className="h-full">
+          <ResizablePanel
+            defaultSize={100 - panelSize}
+            minSize={15}
+            maxSize={75}
+            className="pointer-events-none"
+          />
+          <ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/20 transition-colors" />
           <ResizablePanel
             defaultSize={panelSize}
             minSize={25}
@@ -84,7 +91,6 @@ const POSFlyout: React.FC = () => {
               </div>
             </div>
           </ResizablePanel>
-          <ResizableHandle withHandle />
         </ResizablePanelGroup>
       </div>
     </div>
