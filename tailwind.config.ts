@@ -63,19 +63,14 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// BlueSky custom colors
-				bluesky: {
-					50: '#f0f7ff',
-					100: '#e0eefe',
-					200: '#c0ddfd',
-					300: '#8bc2fa',
-					400: '#509ef6',
-					500: '#2678eb',
-					600: '#155bd8',
-					700: '#1348c1',
-					800: '#153d9d',
-					900: '#17367d',
-				}
+				// Sky-themed semantic colors
+				'sky-dawn': 'hsl(var(--sky-dawn))',
+				'sky-day': 'hsl(var(--sky-day))',
+				'sky-dusk': 'hsl(var(--sky-dusk))',
+				'sky-night': 'hsl(var(--sky-night))',
+				'cloud-light': 'hsl(var(--cloud-light))',
+				'cloud-medium': 'hsl(var(--cloud-medium))',
+				'cloud-dark': 'hsl(var(--cloud-dark))'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

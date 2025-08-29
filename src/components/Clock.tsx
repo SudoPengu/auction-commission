@@ -24,7 +24,7 @@ const Clock: React.FC = () => {
 
   return (
     <div className="text-sm font-medium bg-secondary rounded-lg px-3 py-1 flex items-center">
-      <span className="text-bluesky-500">{formattedTime}</span>
+      <span className="text-primary">{formattedTime}</span>
     </div>
   );
 };

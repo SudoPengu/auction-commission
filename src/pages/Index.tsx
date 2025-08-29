@@ -17,19 +17,19 @@ const Index: React.FC = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-bluesky-50 to-bluesky-100 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-cloud-light to-cloud-medium flex flex-col items-center justify-center p-4">
       <div className="text-center space-y-8 max-w-md">
         <div className="flex justify-center">
           <Logo size="large" />
         </div>
-        <h1 className="text-4xl font-bold tracking-tight text-bluesky-800">
+        <h1 className="text-4xl font-bold tracking-tight text-sky-night dark:text-sky-day">
           BlueSky Inc.
         </h1>
-        <p className="text-xl text-bluesky-600">
+        <p className="text-xl text-muted-foreground">
           Cloud-Based POS & Live Auction System
         </p>
         <Button 
-          className="px-8 py-6 text-lg bluesky-gradient"
+          className="px-8 py-6 text-lg sky-gradient"
           onClick={() => navigate('/login')}
         >
           Enter System
