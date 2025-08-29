@@ -5,11 +5,12 @@ import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { QrCode, ScanLine, BarChart3, TrendingUp, Info } from 'lucide-react';
+import { QrCode, ScanLine, BarChart3, TrendingUp, Info, Package } from 'lucide-react';
 import TimeFrameSelector from '../components/dashboard/TimeFrameSelector';
 import MetricCards from '../components/dashboard/MetricCards';
 import AnalyticsTabs from '../components/dashboard/AnalyticsTabs';
 import RecentActivity from '../components/dashboard/RecentActivity';
+import { GenerateLabelsModal } from '@/components/GenerateLabelsModal';
 
 type TimeFrame = '1D' | '1W' | '1M' | '3M' | '1Y';
 
@@ -17,6 +18,7 @@ const Dashboard: React.FC = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('1D');
+  const [showGenerateLabels, setShowGenerateLabels] = useState(false);
   
   useEffect(() => {
     console.log("Dashboard mounted, user profile:", profile);
@@ -72,14 +74,14 @@ const Dashboard: React.FC = () => {
                 <div className="text-foreground text-lg font-bold group-hover:text-primary transition-colors">Start Scanning</div>
               </div>
               <Button
-                className="group/btn rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring brand-gradient"
+                className="group/btn rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring brand-blue-gradient"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate('/qr-scanner');
+                  setShowGenerateLabels(true);
                 }}
               >
-                <ScanLine className="h-5 w-5 opacity-90 group-hover/btn:scale-110 transition-transform" />
-                Open QR Scanner
+                <Package className="h-5 w-5 opacity-90 group-hover/btn:scale-110 transition-transform" />
+                Generate Labels
               </Button>
             </div>
           </div>
@@ -125,6 +127,15 @@ const Dashboard: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Generate Labels Modal */}
+      <GenerateLabelsModal
+        open={showGenerateLabels}
+        onOpenChange={setShowGenerateLabels}
+        onComplete={() => {
+          // Could refresh some data here
+        }}
+      />
     </div>
   );
 };
