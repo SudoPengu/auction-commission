@@ -22,6 +22,7 @@ import LiveAuctions from "./pages/LiveAuctions";
 import BidderProfiles from "./pages/BidderProfiles";
 import Profile from "./pages/Profile";
 import MyBids from "./pages/MyBids";
+import Inventory from "./pages/Inventory";
 
 const queryClient = new QueryClient();
 
@@ -83,13 +84,8 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } />
         <Route path="/inventory" element={
-          <ProtectedRoute allowedRoles={['admin', 'super-admin'] as UserRole[]}>
-            <Layout>
-              <div className="space-y-6">
-                <h1 className="text-3xl font-bold">Inventory Management</h1>
-                <p>Inventory functionality will be implemented here.</p>
-              </div>
-            </Layout>
+          <ProtectedRoute allowedRoles={['staff', 'admin', 'super-admin'] as UserRole[]}>
+            <Layout><Inventory /></Layout>
           </ProtectedRoute>
         } />
       </Route>
