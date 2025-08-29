@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,13 +11,8 @@ const POSHandle: React.FC = () => {
   const { profile } = useAuth();
   const location = useLocation();
 
-  // Don't show for bidders
-  if (profile?.role === 'bidder') {
-    return null;
-  }
-
-  // Don't show if already open or on POS page
-  if (isOpen || location.pathname === '/pos') {
+  // All hooks are called first, then we do conditional rendering
+  if (profile?.role === 'bidder' || isOpen || location.pathname === '/pos') {
     return null;
   }
 
