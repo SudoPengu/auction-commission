@@ -1,17 +1,20 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, Search, QrCode } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import POSProductGrid from './POSProductGrid';
 import POSCart from './POSCart';
 import POSCategoryTabs from './POSCategoryTabs';
+import { QRScannerModal } from '@/components/QRScannerModal';
 
 interface POSContentProps {
   onCollapse: () => void;
 }
 
 const POSContent: React.FC<POSContentProps> = ({ onCollapse }) => {
+  const [showScanner, setShowScanner] = useState(false);
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex justify-between items-center p-4 border-b">
@@ -28,7 +31,7 @@ const POSContent: React.FC<POSContentProps> = ({ onCollapse }) => {
               <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search for products..." className="pl-8" />
             </div>
-            <Button variant="outline">
+            <Button variant="outline" onClick={() => setShowScanner(true)}>
               <QrCode className="h-4 w-4 mr-2" />
               Scan
             </Button>
@@ -40,6 +43,15 @@ const POSContent: React.FC<POSContentProps> = ({ onCollapse }) => {
       </div>
 
       <POSCart />
+
+      {/* QR Scanner Modal */}
+      <QRScannerModal
+        open={showScanner}
+        onOpenChange={setShowScanner}
+        onScanComplete={() => {
+          // Could refresh some data here or add to cart
+        }}
+      />
     </div>
   );
 };
