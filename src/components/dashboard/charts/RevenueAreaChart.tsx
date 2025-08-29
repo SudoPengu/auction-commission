@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { useChartData } from '../data/chartDataService';
@@ -19,9 +20,9 @@ const RevenueAreaChart: React.FC<RevenueAreaChartProps> = ({ timeFrame }) => {
   const { revenueData } = useChartData(timeFrame);
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-PH', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'PHP',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
