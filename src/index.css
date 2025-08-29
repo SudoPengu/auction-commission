@@ -5,8 +5,8 @@
 
 @layer base {
   :root {
-    /* Sky Theme - Dawn (Default) */
-    --background: 205 50% 98%;
+    /* Sky Theme - Dawn (Muted) */
+    --background: 205 20% 97%;
     --foreground: 220 15% 25%;
 
     --card: 0 0% 100%;
@@ -15,95 +15,95 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 15% 25%;
 
-    --primary: 200 95% 55%;
-    --primary-foreground: 210 50% 98%;
+    --primary: 200 35% 45%;
+    --primary-foreground: 210 20% 98%;
 
-    --secondary: 205 80% 95%;
+    --secondary: 205 25% 92%;
     --secondary-foreground: 220 15% 35%;
 
-    --muted: 205 50% 96%;
+    --muted: 205 20% 95%;
     --muted-foreground: 220 10% 50%;
 
-    --accent: 195 100% 85%;
+    --accent: 195 30% 80%;
     --accent-foreground: 220 15% 25%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 50% 98%;
+    --destructive: 0 50% 50%;
+    --destructive-foreground: 210 20% 98%;
 
-    --border: 205 30% 90%;
-    --input: 205 30% 90%;
-    --ring: 200 95% 55%;
+    --border: 205 15% 88%;
+    --input: 205 15% 88%;
+    --ring: 200 35% 45%;
 
     --radius: 0.5rem;
 
-    /* Sky-themed semantic colors */
-    --sky-dawn: 15 95% 70%;
-    --sky-day: 200 95% 55%;
-    --sky-dusk: 260 60% 65%;
-    --sky-night: 220 40% 20%;
+    /* Sky-themed semantic colors - Much more muted */
+    --sky-dawn: 15 40% 60%;
+    --sky-day: 200 35% 45%;
+    --sky-dusk: 260 25% 55%;
+    --sky-night: 220 25% 25%;
     
-    --cloud-light: 0 0% 95%;
-    --cloud-medium: 210 15% 85%;
-    --cloud-dark: 220 20% 75%;
+    --cloud-light: 0 0% 94%;
+    --cloud-medium: 210 10% 82%;
+    --cloud-dark: 220 15% 70%;
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 220 15% 25%;
-    --sidebar-primary: 200 95% 55%;
-    --sidebar-primary-foreground: 210 50% 98%;
-    --sidebar-accent: 205 50% 96%;
+    --sidebar-primary: 200 35% 45%;
+    --sidebar-primary-foreground: 210 20% 98%;
+    --sidebar-accent: 205 20% 95%;
     --sidebar-accent-foreground: 220 15% 35%;
-    --sidebar-border: 205 30% 90%;
-    --sidebar-ring: 200 95% 55%;
+    --sidebar-border: 205 15% 88%;
+    --sidebar-ring: 200 35% 45%;
   }
 
   .dark {
-    /* Sky Theme - Night */
-    --background: 220 40% 8%;
-    --foreground: 210 50% 95%;
+    /* Sky Theme - Night (Muted) */
+    --background: 220 25% 10%;
+    --foreground: 210 25% 90%;
 
-    --card: 220 40% 10%;
-    --card-foreground: 210 50% 95%;
+    --card: 220 25% 12%;
+    --card-foreground: 210 25% 90%;
 
-    --popover: 220 40% 10%;
-    --popover-foreground: 210 50% 95%;
+    --popover: 220 25% 12%;
+    --popover-foreground: 210 25% 90%;
 
-    --primary: 200 95% 55%;
-    --primary-foreground: 220 40% 8%;
+    --primary: 200 35% 45%;
+    --primary-foreground: 220 25% 10%;
 
-    --secondary: 220 30% 15%;
-    --secondary-foreground: 210 50% 90%;
+    --secondary: 220 20% 18%;
+    --secondary-foreground: 210 25% 85%;
 
-    --muted: 220 30% 12%;
-    --muted-foreground: 210 20% 70%;
+    --muted: 220 20% 15%;
+    --muted-foreground: 210 15% 65%;
 
-    --accent: 220 30% 15%;
-    --accent-foreground: 210 50% 95%;
+    --accent: 220 20% 18%;
+    --accent-foreground: 210 25% 90%;
 
-    --destructive: 0 62% 45%;
-    --destructive-foreground: 210 50% 95%;
+    --destructive: 0 40% 40%;
+    --destructive-foreground: 210 25% 90%;
 
-    --border: 220 30% 18%;
-    --input: 220 30% 18%;
-    --ring: 200 95% 55%;
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 200 35% 45%;
     
-    /* Night sky colors */
-    --sky-dawn: 15 80% 60%;
-    --sky-day: 200 90% 50%;
-    --sky-dusk: 260 50% 55%;
-    --sky-night: 220 50% 25%;
+    /* Night sky colors - Much more muted */
+    --sky-dawn: 15 30% 50%;
+    --sky-day: 200 35% 40%;
+    --sky-dusk: 260 20% 45%;
+    --sky-night: 220 30% 20%;
     
-    --cloud-light: 220 20% 25%;
-    --cloud-medium: 220 25% 20%;
-    --cloud-dark: 220 30% 15%;
+    --cloud-light: 220 15% 25%;
+    --cloud-medium: 220 20% 20%;
+    --cloud-dark: 220 25% 15%;
 
-    --sidebar-background: 220 40% 10%;
-    --sidebar-foreground: 210 50% 95%;
-    --sidebar-primary: 200 95% 55%;
-    --sidebar-primary-foreground: 220 40% 8%;
-    --sidebar-accent: 220 30% 15%;
-    --sidebar-accent-foreground: 210 50% 90%;
-    --sidebar-border: 220 30% 18%;
-    --sidebar-ring: 200 95% 55%;
+    --sidebar-background: 220 25% 12%;
+    --sidebar-foreground: 210 25% 90%;
+    --sidebar-primary: 200 35% 45%;
+    --sidebar-primary-foreground: 220 25% 10%;
+    --sidebar-accent: 220 20% 18%;
+    --sidebar-accent-foreground: 210 25% 85%;
+    --sidebar-border: 220 20% 20%;
+    --sidebar-ring: 200 35% 45%;
   }
 }
 
