@@ -47,30 +47,30 @@ const Dashboard: React.FC = () => {
       
       {/* QR Scanning Hero Section - Now fully clickable */}
       <Card 
-        className="relative overflow-hidden rounded-2xl bg-muted/40 border-2 border-muted hover:bg-muted/60 hover:scale-[1.01] transition-all duration-300 cursor-pointer group"
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-accent/30 to-secondary/40 border border-primary/30 hover:from-primary/25 hover:via-accent/35 hover:to-secondary/45 hover:border-primary/40 hover:shadow-lg hover:scale-[1.01] transition-all duration-300 cursor-pointer group"
         onClick={() => navigate('/qr-scanner')}
       >
         <CardContent className="p-8">
           {/* Decorative background shapes */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-muted/20 rounded-full blur-xl transform translate-x-16 -translate-y-16" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-muted/10 rounded-full blur-lg transform -translate-x-8 translate-y-8" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-xl transform translate-x-16 -translate-y-16" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-accent/10 rounded-full blur-lg transform -translate-x-8 translate-y-8" />
           
           <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-4 flex-1">
-              <div className="p-3 bg-primary/20 rounded-2xl backdrop-blur-sm group-hover:bg-primary/30 transition-colors">
+              <div className="p-3 bg-primary/30 rounded-2xl backdrop-blur-sm group-hover:bg-primary/40 transition-colors border border-primary/20">
                 <QrCode className="h-10 w-10 text-primary" />
               </div>
               <div className="text-foreground">
-                <h2 className="text-2xl font-bold mb-2 group-hover:text-foreground/80 transition-colors">Faster intake with QR scanning</h2>
+                <h2 className="text-2xl font-bold mb-2 group-hover:text-primary transition-colors">Faster intake with QR scanning</h2>
                 <p className="text-muted-foreground text-lg leading-relaxed">Scan items to create and manage inventory in seconds.</p>
               </div>
             </div>
             
             <div className="flex items-center gap-3">
-              <ScanLine className="h-6 w-6 text-primary/70 animate-pulse group-hover:text-primary transition-colors" />
+              <ScanLine className="h-6 w-6 text-primary/80 animate-pulse group-hover:text-primary transition-colors" />
               <div className="text-right">
                 <div className="text-muted-foreground text-sm font-semibold">Click anywhere to</div>
-                <div className="text-foreground text-lg font-bold">Start Scanning</div>
+                <div className="text-foreground text-lg font-bold group-hover:text-primary transition-colors">Start Scanning</div>
               </div>
             </div>
           </div>

@@ -5,105 +5,105 @@
 
 @layer base {
   :root {
-    /* Sky Theme - Dawn (Muted) */
-    --background: 205 20% 97%;
-    --foreground: 220 15% 25%;
+    /* Sky Theme - Soft Dawn */
+    --background: 210 25% 97%;
+    --foreground: 215 20% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 15% 25%;
+    --card-foreground: 215 20% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 25%;
+    --popover-foreground: 215 20% 20%;
 
-    --primary: 200 35% 45%;
-    --primary-foreground: 210 20% 98%;
+    --primary: 205 60% 50%;
+    --primary-foreground: 210 25% 98%;
 
-    --secondary: 205 25% 92%;
-    --secondary-foreground: 220 15% 35%;
+    --secondary: 210 30% 93%;
+    --secondary-foreground: 215 20% 30%;
 
-    --muted: 205 20% 95%;
-    --muted-foreground: 220 10% 50%;
+    --muted: 210 20% 95%;
+    --muted-foreground: 215 15% 45%;
 
-    --accent: 195 30% 80%;
-    --accent-foreground: 220 15% 25%;
+    --accent: 200 45% 75%;
+    --accent-foreground: 215 20% 20%;
 
-    --destructive: 0 50% 50%;
-    --destructive-foreground: 210 20% 98%;
+    --destructive: 355 60% 55%;
+    --destructive-foreground: 210 25% 98%;
 
-    --border: 205 15% 88%;
-    --input: 205 15% 88%;
-    --ring: 200 35% 45%;
+    --border: 210 20% 87%;
+    --input: 210 20% 87%;
+    --ring: 205 60% 50%;
 
     --radius: 0.5rem;
 
-    /* Sky-themed semantic colors - Much more muted */
-    --sky-dawn: 15 40% 60%;
-    --sky-day: 200 35% 45%;
-    --sky-dusk: 260 25% 55%;
-    --sky-night: 220 25% 25%;
+    /* Sky-themed semantic colors - Soft and comfortable */
+    --sky-dawn: 25 50% 65%;
+    --sky-day: 205 60% 50%;
+    --sky-dusk: 250 40% 60%;
+    --sky-night: 220 35% 30%;
     
-    --cloud-light: 0 0% 94%;
-    --cloud-medium: 210 10% 82%;
-    --cloud-dark: 220 15% 70%;
+    --cloud-light: 210 15% 92%;
+    --cloud-medium: 210 20% 80%;
+    --cloud-dark: 215 25% 65%;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 15% 25%;
-    --sidebar-primary: 200 35% 45%;
-    --sidebar-primary-foreground: 210 20% 98%;
-    --sidebar-accent: 205 20% 95%;
-    --sidebar-accent-foreground: 220 15% 35%;
-    --sidebar-border: 205 15% 88%;
-    --sidebar-ring: 200 35% 45%;
+    --sidebar-foreground: 215 20% 20%;
+    --sidebar-primary: 205 60% 50%;
+    --sidebar-primary-foreground: 210 25% 98%;
+    --sidebar-accent: 210 20% 95%;
+    --sidebar-accent-foreground: 215 20% 30%;
+    --sidebar-border: 210 20% 87%;
+    --sidebar-ring: 205 60% 50%;
   }
 
   .dark {
-    /* Sky Theme - Night (Muted) */
-    --background: 220 25% 10%;
-    --foreground: 210 25% 90%;
+    /* Sky Theme - Soft Night */
+    --background: 215 30% 12%;
+    --foreground: 210 30% 88%;
 
-    --card: 220 25% 12%;
-    --card-foreground: 210 25% 90%;
+    --card: 215 25% 15%;
+    --card-foreground: 210 30% 88%;
 
-    --popover: 220 25% 12%;
-    --popover-foreground: 210 25% 90%;
+    --popover: 215 25% 15%;
+    --popover-foreground: 210 30% 88%;
 
-    --primary: 200 35% 45%;
-    --primary-foreground: 220 25% 10%;
+    --primary: 200 55% 55%;
+    --primary-foreground: 215 30% 12%;
 
-    --secondary: 220 20% 18%;
-    --secondary-foreground: 210 25% 85%;
+    --secondary: 215 25% 22%;
+    --secondary-foreground: 210 25% 80%;
 
-    --muted: 220 20% 15%;
-    --muted-foreground: 210 15% 65%;
+    --muted: 215 20% 18%;
+    --muted-foreground: 210 20% 60%;
 
-    --accent: 220 20% 18%;
-    --accent-foreground: 210 25% 90%;
+    --accent: 215 25% 22%;
+    --accent-foreground: 210 30% 88%;
 
-    --destructive: 0 40% 40%;
-    --destructive-foreground: 210 25% 90%;
+    --destructive: 355 50% 50%;
+    --destructive-foreground: 210 30% 88%;
 
-    --border: 220 20% 20%;
-    --input: 220 20% 20%;
-    --ring: 200 35% 45%;
+    --border: 215 20% 25%;
+    --input: 215 20% 25%;
+    --ring: 200 55% 55%;
     
-    /* Night sky colors - Much more muted */
-    --sky-dawn: 15 30% 50%;
-    --sky-day: 200 35% 40%;
-    --sky-dusk: 260 20% 45%;
-    --sky-night: 220 30% 20%;
+    /* Night sky colors - Soft and comfortable */
+    --sky-dawn: 25 40% 55%;
+    --sky-day: 200 50% 45%;
+    --sky-dusk: 250 35% 50%;
+    --sky-night: 220 40% 25%;
     
-    --cloud-light: 220 15% 25%;
-    --cloud-medium: 220 20% 20%;
-    --cloud-dark: 220 25% 15%;
+    --cloud-light: 215 20% 30%;
+    --cloud-medium: 215 25% 22%;
+    --cloud-dark: 215 30% 18%;
 
-    --sidebar-background: 220 25% 12%;
-    --sidebar-foreground: 210 25% 90%;
-    --sidebar-primary: 200 35% 45%;
-    --sidebar-primary-foreground: 220 25% 10%;
-    --sidebar-accent: 220 20% 18%;
-    --sidebar-accent-foreground: 210 25% 85%;
-    --sidebar-border: 220 20% 20%;
-    --sidebar-ring: 200 35% 45%;
+    --sidebar-background: 215 25% 15%;
+    --sidebar-foreground: 210 30% 88%;
+    --sidebar-primary: 200 55% 55%;
+    --sidebar-primary-foreground: 215 30% 12%;
+    --sidebar-accent: 215 25% 22%;
+    --sidebar-accent-foreground: 210 25% 80%;
+    --sidebar-border: 215 20% 25%;
+    --sidebar-ring: 200 55% 55%;
   }
 }
 
