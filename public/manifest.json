@@ -1,0 +1,40 @@
+
+{
+  "name": "BlueSky Auction POS",
+  "short_name": "BlueSky POS",
+  "description": "Progressive Web App for BlueSky Auction House inventory and POS system",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1e40af",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/placeholder.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/placeholder.svg",
+      "type": "image/svg+xml", 
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "permissions": [
+    "camera"
+  ],
+  "categories": [
+    "business",
+    "productivity"
+  ],
+  "lang": "en-US",
+  "dir": "ltr"
+}

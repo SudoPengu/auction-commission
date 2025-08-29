@@ -303,6 +303,10 @@ export type Database = {
           id: string
           name: string | null
           photo_url: string | null
+          qr_code_url: string | null
+          qr_generated: boolean
+          qr_id: string | null
+          qr_path: string | null
           quantity: number
           sold_quantity: number
           starting_bid_price: number
@@ -321,6 +325,10 @@ export type Database = {
           id?: string
           name?: string | null
           photo_url?: string | null
+          qr_code_url?: string | null
+          qr_generated?: boolean
+          qr_id?: string | null
+          qr_path?: string | null
           quantity?: number
           sold_quantity?: number
           starting_bid_price?: number
@@ -339,6 +347,10 @@ export type Database = {
           id?: string
           name?: string | null
           photo_url?: string | null
+          qr_code_url?: string | null
+          qr_generated?: boolean
+          qr_id?: string | null
+          qr_path?: string | null
           quantity?: number
           sold_quantity?: number
           starting_bid_price?: number
@@ -352,6 +364,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "inventory_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_qr_id_fkey"
+            columns: ["qr_id"]
+            isOneToOne: true
+            referencedRelation: "qr_codes"
             referencedColumns: ["id"]
           },
         ]
@@ -466,6 +485,45 @@ export type Database = {
           price?: number
           stock_quantity?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      qr_codes: {
+        Row: {
+          branch_tag: string
+          code: string
+          created_at: string
+          id: string
+          is_used: boolean
+          printed: boolean
+          qr_code_url: string | null
+          qr_path: string | null
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          branch_tag?: string
+          code: string
+          created_at?: string
+          id?: string
+          is_used?: boolean
+          printed?: boolean
+          qr_code_url?: string | null
+          qr_path?: string | null
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          branch_tag?: string
+          code?: string
+          created_at?: string
+          id?: string
+          is_used?: boolean
+          printed?: boolean
+          qr_code_url?: string | null
+          qr_path?: string | null
+          used_at?: string | null
+          used_by?: string | null
         }
         Relationships: []
       }
@@ -689,7 +747,19 @@ export type Database = {
         }
         Returns: string
       }
+      qr_claim_and_create_inventory: {
+        Args: { p_code: string; p_item: Json }
+        Returns: Json
+      }
+      qr_validate: {
+        Args: { p_code: string }
+        Returns: Json
+      }
       reserve_inventory_labels: {
+        Args: { p_branch?: string; p_count: number }
+        Returns: string[]
+      }
+      reserve_qr_codes: {
         Args: { p_branch?: string; p_count: number }
         Returns: string[]
       }

@@ -10,13 +10,15 @@ import { StorageCountdown } from './StorageCountdown';
 import { ItemPhotoUpload } from './ItemPhotoUpload';
 import { ItemDetailsEditor } from './ItemDetailsEditor';
 import { QRCodeDisplay } from './QRCodeDisplay';
+import { QRModal } from '../QRModal';
 import { 
   Lock, 
   Unlock, 
   Edit, 
   Package, 
   Calendar,
-  DollarSign
+  DollarSign,
+  QrCode
 } from 'lucide-react';
 
 interface InventoryItem {
@@ -35,6 +37,10 @@ interface InventoryItem {
   branch_tag: string;
   created_at: string;
   updated_at: string;
+  qr_id: string | null;
+  qr_path: string | null;
+  qr_code_url: string | null;
+  qr_generated: boolean;
 }
 
 interface InventoryItemCardProps {
@@ -48,6 +54,7 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
   const { toast } = useToast();
 
   const handleStatusChange = async (newStatus: string) => {
@@ -124,133 +131,189 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({
     );
   };
 
+  const hasQR = item.qr_generated || item.qr_code_url || item.qr_path;
+
   return (
-    <Card className="h-full">
-      <ItemConditionBorder condition={item.condition}>
-        <CardHeader className="pb-2">
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <QRCodeDisplay itemId={item.id} size={40} />
-              <h3 className="font-semibold text-sm mt-2">
-                {item.name || 'Unnamed Item'}
-              </h3>
-              <p className="text-xs text-muted-foreground">{item.id}</p>
+    <>
+      <Card className="h-full">
+        <ItemConditionBorder condition={item.condition}>
+          <CardHeader className="pb-2">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  {hasQR ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-10 h-10 bg-muted rounded border flex items-center justify-center">
+                        {item.qr_code_url ? (
+                          <img
+                            src={item.qr_code_url}
+                            alt={`QR for ${item.id}`}
+                            className="w-8 h-8 object-contain"
+                          />
+                        ) : (
+                          <QrCode className="w-5 h-5 text-muted-foreground" />
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setShowQRModal(true)}
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        View QR
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="w-10 h-10 bg-muted rounded border flex items-center justify-center">
+                        <Package className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                      <span className="text-xs text-muted-foreground">No QR</span>
+                    </div>
+                  )}
+                </div>
+                <h3 className="font-semibold text-sm">
+                  {item.name || 'Unnamed Item'}
+                </h3>
+                <p className="text-xs text-muted-foreground">{item.id}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditing(true)}
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsEditing(true)}
-            >
-              <Edit className="w-4 h-4" />
-            </Button>
-          </div>
-          
-          <div className="flex items-center gap-2 mt-2">
-            <ItemStatusBadge status={item.status} />
-            {item.category_name && (
-              <Badge variant="outline" className="text-xs">
-                {item.category_name}
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-
-        <CardContent className="pt-0">
-          {/* Photo */}
-          <ItemPhotoUpload 
-            itemId={item.id}
-            currentPhotoUrl={item.photo_url}
-            onUpdate={onUpdate}
-          />
-
-          {/* Quantity */}
-          <div className="flex items-center gap-2 mt-3 text-sm">
-            <Package className="w-4 h-4 text-muted-foreground" />
-            <span>
-              {item.quantity - item.sold_quantity} of {item.quantity} available
-            </span>
-          </div>
-
-          {/* Pricing */}
-          <div className="mt-3">
-            {getPriceDisplay()}
-          </div>
-
-          {/* Storage Countdown */}
-          {item.storage_expires_at && (
-            <StorageCountdown 
-              expiresAt={item.storage_expires_at}
-              className="mt-3"
-            />
-          )}
-
-          {/* Quick Actions */}
-          <div className="mt-4 space-y-2">
-            {item.status === 'locked' && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => handleStatusChange('walk_in_available')}
-                disabled={isUpdating}
-              >
-                <Unlock className="w-4 h-4 mr-2" />
-                Unlock for Walk-in
-              </Button>
-            )}
             
-            {item.status === 'walk_in_available' && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => handleStatusChange('locked')}
-                disabled={isUpdating}
-              >
-                <Lock className="w-4 h-4 mr-2" />
-                Lock Item
-              </Button>
+            <div className="flex items-center gap-2 mt-2">
+              <ItemStatusBadge status={item.status} />
+              {item.category_name && (
+                <Badge variant="outline" className="text-xs">
+                  {item.category_name}
+                </Badge>
+              )}
+            </div>
+          </CardHeader>
+
+          <CardContent className="pt-0">
+            {/* Photo */}
+            <ItemPhotoUpload 
+              itemId={item.id}
+              currentPhotoUrl={item.photo_url}
+              onUpdate={onUpdate}
+            />
+
+            {/* Quantity */}
+            <div className="flex items-center gap-2 mt-3 text-sm">
+              <Package className="w-4 h-4 text-muted-foreground" />
+              <span>
+                {item.quantity - item.sold_quantity} of {item.quantity} available
+              </span>
+            </div>
+
+            {/* Pricing */}
+            <div className="mt-3">
+              {getPriceDisplay()}
+            </div>
+
+            {/* Storage Countdown */}
+            {item.storage_expires_at && (
+              <StorageCountdown 
+                expiresAt={item.storage_expires_at}
+                className="mt-3"
+              />
             )}
 
-            {item.status === 'auctioned_unsold' && (
-              <div className="flex gap-2">
+            {/* Quick Actions */}
+            <div className="mt-4 space-y-2">
+              {hasQR && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1"
+                  className="w-full"
+                  onClick={() => setShowQRModal(true)}
+                >
+                  <QrCode className="w-4 h-4 mr-2" />
+                  View QR Code
+                </Button>
+              )}
+
+              {item.status === 'locked' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
                   onClick={() => handleStatusChange('walk_in_available')}
                   disabled={isUpdating}
                 >
-                  Move to Walk-in
+                  <Unlock className="w-4 h-4 mr-2" />
+                  Unlock for Walk-in
                 </Button>
+              )}
+              
+              {item.status === 'walk_in_available' && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1"
-                  onClick={() => handleStatusChange('pending_auction')}
+                  className="w-full"
+                  onClick={() => handleStatusChange('locked')}
                   disabled={isUpdating}
                 >
-                  Re-auction
+                  <Lock className="w-4 h-4 mr-2" />
+                  Lock Item
                 </Button>
-              </div>
-            )}
-          </div>
+              )}
 
-          <div className="mt-3 pt-2 border-t text-xs text-muted-foreground">
-            <div>Branch: {item.branch_tag}</div>
-            <div>Added: {new Date(item.created_at).toLocaleDateString()}</div>
-          </div>
-        </CardContent>
-      </ItemConditionBorder>
+              {item.status === 'auctioned_unsold' && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleStatusChange('walk_in_available')}
+                    disabled={isUpdating}
+                  >
+                    Move to Walk-in
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleStatusChange('pending_auction')}
+                    disabled={isUpdating}
+                  >
+                    Re-auction
+                  </Button>
+                </div>
+              )}
+            </div>
 
-      {/* Edit Modal */}
-      {isEditing && (
-        <ItemDetailsEditor
-          item={item}
-          onSave={onUpdate}
-          onCancel={() => setIsEditing(false)}
-        />
-      )}
-    </Card>
+            <div className="mt-3 pt-2 border-t text-xs text-muted-foreground">
+              <div>Branch: {item.branch_tag}</div>
+              <div>Added: {new Date(item.created_at).toLocaleDateString()}</div>
+              {item.qr_generated && (
+                <div className="text-green-600">✓ QR Generated</div>
+              )}
+            </div>
+          </CardContent>
+        </ItemConditionBorder>
+
+        {/* Edit Modal */}
+        {isEditing && (
+          <ItemDetailsEditor
+            item={item}
+            onSave={onUpdate}
+            onCancel={() => setIsEditing(false)}
+          />
+        )}
+      </Card>
+
+      {/* QR Modal */}
+      <QRModal
+        open={showQRModal}
+        onOpenChange={setShowQRModal}
+        itemId={item.id}
+        qrCodeUrl={item.qr_code_url}
+      />
+    </>
   );
 };
