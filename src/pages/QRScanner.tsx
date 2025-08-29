@@ -25,59 +25,78 @@ const QRScanner: React.FC = () => {
       </div>
       
       <div className="grid md:grid-cols-2 gap-6">
-        <Card className="border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20 hover:shadow-md transition-all duration-300 hover:scale-[1.02]">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                <Camera className="h-5 w-5" />
-                QR Code Scanning
-              </CardTitle>
-              <Badge variant="outline" className="text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800">
-                Camera
-              </Badge>
-            </div>
-            <CardDescription>
-              Scan QR codes to create and manage inventory items instantly
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col items-center justify-center space-y-4 h-40">
-              <div className="p-4 bg-blue-100 dark:bg-blue-900 rounded-2xl animate-fade-in">
-                <QrCode className="h-16 w-16 text-blue-600 dark:text-blue-300" />
+        <Card 
+          className="relative overflow-hidden cursor-pointer group border-0 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+          onClick={() => setShowScanner(true)}
+        >
+          <div className="absolute inset-0 brand-blue-gradient opacity-80"></div>
+          <div className="relative bg-background/95 backdrop-blur-sm m-1 rounded-lg">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-primary">
+                  <Camera className="h-5 w-5" />
+                  QR Code Scanning
+                </CardTitle>
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                  Camera
+                </Badge>
               </div>
-              <Button onClick={() => setShowScanner(true)} size="lg" className="hover-scale">
-                <ScanLine className="w-5 h-5 mr-2 animate-pulse" />
-                Start Scanning
-              </Button>
-            </div>
-          </CardContent>
+              <CardDescription>
+                Scan QR codes to create and manage inventory items instantly
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col items-center justify-center space-y-4 h-40">
+                <div className="p-4 bg-primary/10 rounded-2xl animate-fade-in group-hover:scale-110 transition-transform duration-300">
+                  <QrCode className="h-16 w-16 text-primary" />
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center gap-2 text-primary font-medium">
+                    <ScanLine className="w-5 h-5 animate-pulse" />
+                    Start Scanning
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Click anywhere to begin</p>
+                </div>
+              </div>
+            </CardContent>
+          </div>
         </Card>
         
-        <Card className="border-l-4 border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/20 hover:shadow-md transition-all duration-300 hover:scale-[1.02]">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
-                <FileText className="h-5 w-5" />
-                QR Label Generation
-              </CardTitle>
-              <Badge variant="outline" className="text-amber-600 border-amber-200 dark:text-amber-400 dark:border-amber-800">
-                Bulk
-              </Badge>
-            </div>
-            <CardDescription>
-              Generate QR labels for bulk inventory processing and organization
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col items-center justify-center space-y-4 h-40">
-              <div className="p-4 bg-amber-100 dark:bg-amber-900 rounded-2xl animate-fade-in">
-                <QrCode className="h-16 w-16 text-amber-600 dark:text-amber-300" />
+        <Card 
+          className="relative overflow-hidden cursor-pointer group border-0 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+          onClick={() => setShowGenerator(true)}
+        >
+          <div className="absolute inset-0 sky-dawn-gradient opacity-80"></div>
+          <div className="relative bg-background/95 backdrop-blur-sm m-1 rounded-lg">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-primary">
+                  <FileText className="h-5 w-5" />
+                  QR Label Generation
+                </CardTitle>
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                  Bulk
+                </Badge>
               </div>
-              <Button onClick={() => setShowGenerator(true)} variant="outline" size="lg" className="hover-scale border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-300 dark:hover:bg-amber-950">
-                Generate Labels
-              </Button>
-            </div>
-          </CardContent>
+              <CardDescription>
+                Generate QR labels for bulk inventory processing and organization
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col items-center justify-center space-y-4 h-40">
+                <div className="p-4 bg-primary/10 rounded-2xl animate-fade-in group-hover:scale-110 transition-transform duration-300">
+                  <QrCode className="h-16 w-16 text-primary" />
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center gap-2 text-primary font-medium">
+                    <FileText className="w-5 h-5" />
+                    Generate Labels
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Click anywhere to begin</p>
+                </div>
+              </div>
+            </CardContent>
+          </div>
         </Card>
       </div>
 
