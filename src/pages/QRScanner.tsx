@@ -24,25 +24,6 @@ const QRScanner: React.FC = () => {
         </div>
       </div>
       
-      {/* Hero Section */}
-      <Card className="relative overflow-hidden border-l-4 border-l-indigo-500 bg-gradient-to-r from-indigo-50 via-blue-50 to-cyan-50 dark:from-indigo-950/30 dark:via-blue-950/30 dark:to-cyan-950/30">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 bg-indigo-100 dark:bg-indigo-900 rounded-xl">
-              <Zap className="h-6 w-6 text-indigo-600 dark:text-indigo-300" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-indigo-900 dark:text-indigo-100">QR Operations Center</h2>
-              <p className="text-indigo-700 dark:text-indigo-300">Streamline your inventory workflow</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400">
-            <Clock className="h-4 w-4" />
-            <span>Average scan time: 2.3 seconds</span>
-          </div>
-        </CardContent>
-      </Card>
-      
       <div className="grid md:grid-cols-2 gap-6">
         <Card className="border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20 hover:shadow-md transition-all duration-300 hover:scale-[1.02]">
           <CardHeader>
