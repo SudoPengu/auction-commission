@@ -12,10 +12,10 @@ const Logo: React.FC<LogoProps> = ({
     large: 'h-12'
   }[size];
   return <div className="flex items-center">
-      <div className={`sky-gradient rounded-lg ${sizeClass} aspect-square flex items-center justify-center text-white font-bold`}>
+      <div className={`brand-gradient rounded-lg ${sizeClass} aspect-square flex items-center justify-center text-white font-bold shadow-sm`}>
         BS
       </div>
-      <span className="ml-2 font-bold text-sky-night dark:text-sky-day">BlueSky Inc</span>
+      <span className="ml-2 font-bold text-foreground">BlueSky Inc</span>
     </div>;
 };
 export default Logo;

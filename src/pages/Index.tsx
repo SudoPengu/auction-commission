@@ -29,7 +29,7 @@ const Index: React.FC = () => {
           Cloud-Based POS & Live Auction System
         </p>
         <Button 
-          className="px-8 py-6 text-lg sky-gradient"
+          className="px-8 py-6 text-lg brand-gradient text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
           onClick={() => navigate('/login')}
         >
           Enter System

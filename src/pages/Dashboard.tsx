@@ -45,19 +45,19 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
       
-      {/* QR Scanning Hero Section - Now fully clickable */}
+      {/* QR Scanning Hero Section - Lazada-inspired design */}
       <Card 
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-accent/30 to-secondary/40 border border-primary/30 hover:from-primary/25 hover:via-accent/35 hover:to-secondary/45 hover:border-primary/40 hover:shadow-lg hover:scale-[1.01] transition-all duration-300 cursor-pointer group"
+        className="relative overflow-hidden rounded-2xl brand-surface border border-primary/20 hover:border-primary/30 hover:shadow-lg transition-all duration-300 cursor-pointer animate-enter group"
         onClick={() => navigate('/qr-scanner')}
       >
         <CardContent className="p-8">
           {/* Decorative background shapes */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-xl transform translate-x-16 -translate-y-16" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-accent/10 rounded-full blur-lg transform -translate-x-8 translate-y-8" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-brand-magenta/10 to-brand-indigo/10 rounded-full blur-xl transform translate-x-16 -translate-y-16" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-brand-orange/10 to-brand-blue/10 rounded-full blur-lg transform -translate-x-8 translate-y-8" />
           
           <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-4 flex-1">
-              <div className="p-3 bg-primary/30 rounded-2xl backdrop-blur-sm group-hover:bg-primary/40 transition-colors border border-primary/20">
+              <div className="p-3 rounded-2xl bg-primary/15 border border-primary/20 group-hover:bg-primary/20 transition-colors">
                 <QrCode className="h-10 w-10 text-primary" />
               </div>
               <div className="text-foreground">
@@ -66,12 +66,21 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <ScanLine className="h-6 w-6 text-primary/80 animate-pulse group-hover:text-primary transition-colors" />
+            <div className="flex items-center gap-4">
               <div className="text-right">
-                <div className="text-muted-foreground text-sm font-semibold">Click anywhere to</div>
+                <div className="text-muted-foreground text-sm font-semibold">Click anywhere or</div>
                 <div className="text-foreground text-lg font-bold group-hover:text-primary transition-colors">Start Scanning</div>
               </div>
+              <Button
+                className="group/btn rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring brand-gradient"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/qr-scanner');
+                }}
+              >
+                <ScanLine className="h-5 w-5 opacity-90 group-hover/btn:scale-110 transition-transform" />
+                Open QR Scanner
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -102,15 +111,15 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="flex flex-wrap gap-4 text-xs">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded"></div>
+              <div className="w-3 h-3 brand-gradient rounded"></div>
               <span className="text-muted-foreground">QR Operations</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-500 rounded"></div>
+              <div className="w-3 h-3 bg-primary rounded"></div>
               <span className="text-muted-foreground">Analytics</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-orange-500 rounded"></div>
+              <div className="w-3 h-3 bg-accent rounded"></div>
               <span className="text-muted-foreground">Activity</span>
             </div>
           </div>

@@ -5,46 +5,52 @@
 
 @layer base {
   :root {
-    /* Sky Theme - Soft Dawn */
-    --background: 210 25% 97%;
-    --foreground: 215 20% 20%;
+    /* Lazada-inspired Theme - Comfortable & Professional */
+    --background: 220 22% 98%;
+    --foreground: 225 25% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 20% 20%;
+    --card-foreground: 225 25% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 20% 20%;
+    --popover-foreground: 225 25% 15%;
 
-    --primary: 205 60% 50%;
-    --primary-foreground: 210 25% 98%;
+    --primary: 228 58% 44%;
+    --primary-foreground: 220 22% 98%;
 
-    --secondary: 210 30% 93%;
-    --secondary-foreground: 215 20% 30%;
+    --secondary: 225 20% 94%;
+    --secondary-foreground: 225 25% 25%;
 
-    --muted: 210 20% 95%;
-    --muted-foreground: 215 15% 45%;
+    --muted: 225 16% 92%;
+    --muted-foreground: 225 20% 45%;
 
-    --accent: 200 45% 75%;
-    --accent-foreground: 215 20% 20%;
+    --accent: 258 54% 55%;
+    --accent-foreground: 220 22% 98%;
 
     --destructive: 355 60% 55%;
-    --destructive-foreground: 210 25% 98%;
+    --destructive-foreground: 220 22% 98%;
 
-    --border: 210 20% 87%;
-    --input: 210 20% 87%;
-    --ring: 205 60% 50%;
+    --border: 225 15% 87%;
+    --input: 225 15% 87%;
+    --ring: 258 54% 55%;
 
     --radius: 0.5rem;
 
-    /* Sky-themed semantic colors - Soft and comfortable */
-    --sky-dawn: 25 50% 65%;
-    --sky-day: 205 60% 50%;
-    --sky-dusk: 250 40% 60%;
-    --sky-night: 220 35% 30%;
+    /* Lazada brand colors - Comfortable saturation */
+    --brand-blue: 228 58% 44%;
+    --brand-indigo: 258 54% 55%;
+    --brand-magenta: 330 62% 56%;
+    --brand-orange: 24 82% 56%;
     
-    --cloud-light: 210 15% 92%;
-    --cloud-medium: 210 20% 80%;
-    --cloud-dark: 215 25% 65%;
+    /* Legacy sky colors for backward compatibility */
+    --sky-dawn: 25 50% 65%;
+    --sky-day: 228 58% 44%;
+    --sky-dusk: 258 54% 55%;
+    --sky-night: 225 35% 25%;
+    
+    --cloud-light: 225 15% 92%;
+    --cloud-medium: 225 20% 85%;
+    --cloud-dark: 225 25% 70%;
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 215 20% 20%;
@@ -57,44 +63,50 @@
   }
 
   .dark {
-    /* Sky Theme - Soft Night */
-    --background: 215 30% 12%;
-    --foreground: 210 30% 88%;
+    /* Lazada-inspired Dark Theme */
+    --background: 230 45% 10%;
+    --foreground: 225 25% 88%;
 
-    --card: 215 25% 15%;
-    --card-foreground: 210 30% 88%;
+    --card: 230 35% 15%;
+    --card-foreground: 225 25% 88%;
 
-    --popover: 215 25% 15%;
-    --popover-foreground: 210 30% 88%;
+    --popover: 230 35% 15%;
+    --popover-foreground: 225 25% 88%;
 
-    --primary: 200 55% 55%;
-    --primary-foreground: 215 30% 12%;
+    --primary: 228 60% 58%;
+    --primary-foreground: 230 45% 10%;
 
-    --secondary: 215 25% 22%;
-    --secondary-foreground: 210 25% 80%;
+    --secondary: 230 24% 18%;
+    --secondary-foreground: 225 20% 80%;
 
-    --muted: 215 20% 18%;
-    --muted-foreground: 210 20% 60%;
+    --muted: 230 20% 16%;
+    --muted-foreground: 225 15% 60%;
 
-    --accent: 215 25% 22%;
-    --accent-foreground: 210 30% 88%;
+    --accent: 258 58% 62%;
+    --accent-foreground: 230 45% 10%;
 
-    --destructive: 355 50% 50%;
-    --destructive-foreground: 210 30% 88%;
+    --destructive: 355 55% 55%;
+    --destructive-foreground: 225 25% 88%;
 
-    --border: 215 20% 25%;
-    --input: 215 20% 25%;
-    --ring: 200 55% 55%;
+    --border: 230 20% 25%;
+    --input: 230 20% 25%;
+    --ring: 258 58% 62%;
     
-    /* Night sky colors - Soft and comfortable */
+    /* Dark mode brand colors */
+    --brand-blue: 228 60% 58%;
+    --brand-indigo: 258 58% 62%;
+    --brand-magenta: 330 65% 62%;
+    --brand-orange: 24 85% 62%;
+    
+    /* Legacy dark sky colors */
     --sky-dawn: 25 40% 55%;
-    --sky-day: 200 50% 45%;
-    --sky-dusk: 250 35% 50%;
-    --sky-night: 220 40% 25%;
+    --sky-day: 228 60% 58%;
+    --sky-dusk: 258 58% 62%;
+    --sky-night: 230 40% 20%;
     
-    --cloud-light: 215 20% 30%;
-    --cloud-medium: 215 25% 22%;
-    --cloud-dark: 215 30% 18%;
+    --cloud-light: 230 20% 30%;
+    --cloud-medium: 230 25% 22%;
+    --cloud-dark: 230 30% 18%;
 
     --sidebar-background: 215 25% 15%;
     --sidebar-foreground: 210 30% 88%;
@@ -118,6 +130,20 @@
 }
 
 @layer components {
+  /* Lazada-inspired brand gradients */
+  .brand-gradient {
+    background-image: linear-gradient(90deg, hsl(var(--brand-magenta)), hsl(var(--brand-indigo)), hsl(var(--brand-orange)));
+  }
+  
+  .brand-surface {
+    background-image: linear-gradient(135deg, hsl(var(--brand-blue) / 0.06), hsl(var(--brand-indigo) / 0.06));
+  }
+  
+  .brand-ring {
+    box-shadow: 0 0 0 2px hsl(var(--ring));
+  }
+  
+  /* Legacy sky gradients for backward compatibility */
   .sky-gradient {
     @apply bg-gradient-to-r from-sky-day to-sky-dusk;
   }
@@ -158,12 +184,33 @@
     animation: pulse-live 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
   
+  /* Subtle enter animation */
+  .animate-enter {
+    animation: fade-in 0.4s ease-out;
+  }
+  
+  /* Hover scale for interactive elements */
+  .hover-scale {
+    @apply transition-transform duration-200 hover:scale-105;
+  }
+  
   @keyframes pulse-live {
     0%, 100% {
       opacity: 1;
     }
     50% {
       opacity: .7;
+    }
+  }
+  
+  @keyframes fade-in {
+    0% {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 }
