@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,19 +19,18 @@ export const BulkLabelGenerator: React.FC = () => {
     mutationFn: async ({ count, branchTag }: { count: number; branchTag: string }) => {
       const { data, error } = await supabase.rpc('reserve_inventory_labels', {
         p_count: count,
-        p_branch_tag: branchTag
+        p_branch: branchTag
       });
 
       if (error) throw error;
-      return data;
+      return data as string[];
     },
     onSuccess: (data) => {
-      const ids = data.map((item: any) => item.id);
-      setGeneratedIds(ids);
+      setGeneratedIds(data);
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       toast({
         title: "Labels Generated",
-        description: `Created ${ids.length} new item placeholders`,
+        description: `Created ${data.length} new item placeholders`,
       });
     },
     onError: (error: any) => {

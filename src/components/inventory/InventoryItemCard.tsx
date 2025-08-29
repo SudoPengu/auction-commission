@@ -54,12 +54,18 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({
   const handleStatusChange = async (newStatus: string) => {
     setIsUpdating(true);
     try {
-      // First confirm QR (in real implementation, this would require actual QR scan)
-      const { error: confirmError } = await supabase.rpc('inventory_confirm_qr', {
-        p_item_id: item.id
+      // First confirm QR (simplified - in real implementation, this would require actual QR scan)
+      const { data: confirmData, error: confirmError } = await supabase.rpc('inventory_confirm_qr', {
+        scanned_code: item.id,
+        expected_id: item.id
       });
 
       if (confirmError) throw confirmError;
+      
+      const confirmResult = confirmData as { success: boolean; error?: string };
+      if (!confirmResult.success) {
+        throw new Error(confirmResult.error || 'QR confirmation failed');
+      }
 
       // Then update status
       const { data, error } = await supabase.rpc('update_inventory_status', {
@@ -69,14 +75,15 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({
 
       if (error) throw error;
 
-      if (data?.success) {
+      const result = data as { success: boolean; error?: string };
+      if (result.success) {
         toast({
           title: "Status Updated",
           description: `${item.id} moved to ${newStatus.replace('_', ' ')}`,
         });
         onUpdate();
       } else {
-        throw new Error(data?.error || 'Failed to update status');
+        throw new Error(result.error || 'Failed to update status');
       }
     } catch (error: any) {
       toast({

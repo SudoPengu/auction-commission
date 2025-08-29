@@ -255,6 +255,107 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_categories: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: number
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      inventory_id_counters: {
+        Row: {
+          day: string
+          last_number: number
+        }
+        Insert: {
+          day: string
+          last_number: number
+        }
+        Update: {
+          day?: string
+          last_number?: number
+        }
+        Relationships: []
+      }
+      inventory_items: {
+        Row: {
+          branch_tag: string
+          category_id: number | null
+          category_name: string | null
+          condition: Database["public"]["Enums"]["inventory_condition"]
+          created_at: string
+          expected_sale_price: number | null
+          final_sale_price: number | null
+          id: string
+          name: string | null
+          photo_url: string | null
+          quantity: number
+          sold_quantity: number
+          starting_bid_price: number
+          status: Database["public"]["Enums"]["inventory_status"]
+          storage_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          branch_tag?: string
+          category_id?: number | null
+          category_name?: string | null
+          condition?: Database["public"]["Enums"]["inventory_condition"]
+          created_at?: string
+          expected_sale_price?: number | null
+          final_sale_price?: number | null
+          id?: string
+          name?: string | null
+          photo_url?: string | null
+          quantity?: number
+          sold_quantity?: number
+          starting_bid_price?: number
+          status?: Database["public"]["Enums"]["inventory_status"]
+          storage_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          branch_tag?: string
+          category_id?: number | null
+          category_name?: string | null
+          condition?: Database["public"]["Enums"]["inventory_condition"]
+          created_at?: string
+          expected_sale_price?: number | null
+          final_sale_price?: number | null
+          id?: string
+          name?: string | null
+          photo_url?: string | null
+          quantity?: number
+          sold_quantity?: number
+          starting_bid_price?: number
+          status?: Database["public"]["Enums"]["inventory_status"]
+          storage_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -559,6 +660,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
+      generate_inventory_id: {
+        Args: { prefix?: string }
+        Returns: string
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["user_role"]
@@ -571,6 +676,10 @@ export type Database = {
         Args: { required_role: Database["public"]["Enums"]["user_role"] }
         Returns: boolean
       }
+      inventory_confirm_qr: {
+        Args: { expected_id: string; scanned_code: string }
+        Returns: Json
+      }
       log_activity: {
         Args: {
           action: string
@@ -580,12 +689,37 @@ export type Database = {
         }
         Returns: string
       }
+      reserve_inventory_labels: {
+        Args: { p_branch?: string; p_count: number }
+        Returns: string[]
+      }
       update_display_name: {
         Args: { new_display_name: string }
         Returns: Json
       }
+      update_inventory_status: {
+        Args: {
+          p_final_price?: number
+          p_item_id: string
+          p_new_status: Database["public"]["Enums"]["inventory_status"]
+          p_sold_delta?: number
+        }
+        Returns: Json
+      }
     }
     Enums: {
+      inventory_condition:
+        | "brand_new"
+        | "like_new"
+        | "used_good"
+        | "used_fair"
+        | "damaged"
+      inventory_status:
+        | "pending_auction"
+        | "auctioned_sold"
+        | "auctioned_unsold"
+        | "walk_in_available"
+        | "locked"
       user_role:
         | "super-admin"
         | "admin"
@@ -719,6 +853,20 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      inventory_condition: [
+        "brand_new",
+        "like_new",
+        "used_good",
+        "used_fair",
+        "damaged",
+      ],
+      inventory_status: [
+        "pending_auction",
+        "auctioned_sold",
+        "auctioned_unsold",
+        "walk_in_available",
+        "locked",
+      ],
       user_role: ["super-admin", "admin", "staff", "auction-manager", "bidder"],
     },
   },
