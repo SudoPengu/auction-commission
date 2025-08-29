@@ -3,18 +3,20 @@ import { ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePOSUI } from '@/contexts/POSUIContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
 
 const POSHandle: React.FC = () => {
   const { isOpen, toggleOpen } = usePOSUI();
   const { profile } = useAuth();
+  const location = useLocation();
 
   // Don't show for bidders
   if (profile?.role === 'bidder') {
     return null;
   }
 
-  // Don't show if already open
-  if (isOpen) {
+  // Don't show if already open or on POS page
+  if (isOpen || location.pathname === '/pos') {
     return null;
   }
 

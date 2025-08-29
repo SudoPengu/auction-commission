@@ -29,7 +29,7 @@ const POSFlyout: React.FC = () => {
 
   // Auto-navigate to full page if panel is resized to near full width
   useEffect(() => {
-    if (panelSize > 80 && isOpen) {
+    if (panelSize > 70 && isOpen) {
       setIsOpen(false);
       navigate('/pos');
     }
@@ -45,7 +45,7 @@ const POSFlyout: React.FC = () => {
       <Drawer open={isOpen} onOpenChange={setIsOpen}>
         <DrawerContent className="h-[85vh]">
           <DrawerHeader className="pb-2">
-            <DrawerTitle>Point of Sale</DrawerTitle>
+            <DrawerTitle>POS</DrawerTitle>
           </DrawerHeader>
           <div className="flex-1 overflow-hidden">
             <POSContent onCollapse={handleClose} />
@@ -81,7 +81,7 @@ const POSFlyout: React.FC = () => {
           >
             <div className="h-full flex flex-col">
               <div className="flex justify-between items-center p-4 border-b">
-                <h2 className="text-lg font-bold">Point of Sale</h2>
+                <h2 className="text-lg font-bold">POS</h2>
                 <Button variant="ghost" size="icon" onClick={handleClose}>
                   <X className="h-4 w-4" />
                 </Button>
