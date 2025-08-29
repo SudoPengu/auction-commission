@@ -3,7 +3,7 @@ import {
   Package2, 
   Users, 
   BarChart3, 
-  Settings,
+  User,
   ShoppingCart,
   UserCircle
 } from 'lucide-react';
@@ -53,9 +53,9 @@ export const navigationItems: NavItem[] = [
     roles: ['super-admin']
   },
   {
-    name: 'Settings',
-    icon: Settings,
-    path: '/settings',
-    roles: ['admin', 'super-admin']
+    name: 'Profile',
+    icon: User,
+    path: '/profile',
+    roles: ['admin', 'super-admin', 'staff', 'bidder']
   }
 ];
