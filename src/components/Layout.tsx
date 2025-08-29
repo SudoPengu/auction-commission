@@ -5,6 +5,9 @@ import Header from './Header';
 import Sidebar from './Sidebar';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from "@/components/ui/use-toast";
+import { POSUIProvider } from '@/contexts/POSUIContext';
+import POSHandle from './pos/POSHandle';
+import POSFlyout from './pos/POSFlyout';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -49,17 +52,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   console.log("Rendering Layout with sidebar and content, sidebar state:", sidebarOpen);
   
   return (
-    <div className="min-h-screen bg-background flex">
-      <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header toggleSidebar={toggleSidebar} />
+    <POSUIProvider>
+      <div className="min-h-screen bg-background flex">
+        <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
         
-        <main className="flex-1 overflow-y-auto p-4">
-          {children}
-        </main>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Header toggleSidebar={toggleSidebar} />
+          
+          <main className="flex-1 overflow-y-auto p-4">
+            {children}
+          </main>
+        </div>
+        
+        {/* POS System */}
+        <POSHandle />
+        <POSFlyout />
       </div>
-    </div>
+    </POSUIProvider>
   );
 };
 

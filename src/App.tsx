@@ -54,7 +54,11 @@ const AppRoutes = () => {
             {profile?.role === 'bidder' ? <Navigate to="/auctions" replace /> : <Dashboard />}
           </Layout>
         } />
-        <Route path="/pos" element={<Layout><Dashboard /></Layout>} />
+        <Route path="/pos" element={
+          <ProtectedRoute allowedRoles={['staff', 'admin', 'super-admin', 'auction-manager'] as UserRole[]}>
+            <Layout><POS /></Layout>
+          </ProtectedRoute>
+        } />
         <Route path="/qr-scanner" element={<Layout><QRScanner /></Layout>} />
         <Route path="/auctions" element={<Layout><LiveAuctions /></Layout>} />
         <Route path="/bidders" element={<Layout><BidderProfiles /></Layout>} />
