@@ -17,9 +17,8 @@ const POSContent: React.FC<POSContentProps> = ({ onCollapse }) => {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex justify-between items-center p-4 border-b">
-        <h2 className="text-lg font-bold">POS</h2>
-        <Button variant="ghost" size="icon" onClick={onCollapse} className="md:hidden">
+      <div className="flex justify-end items-center p-4 border-b md:hidden">
+        <Button variant="ghost" size="icon" onClick={onCollapse}>
           <ChevronRight />
         </Button>
       </div>
