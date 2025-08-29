@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { QrCode, ScanLine } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { QrCode, ScanLine, Activity, BarChart3, TrendingUp, Info } from 'lucide-react';
 import POS from './POS';
 import TimeFrameSelector from '../components/dashboard/TimeFrameSelector';
 import MetricCards from '../components/dashboard/MetricCards';
@@ -83,17 +84,85 @@ const Dashboard: React.FC = () => {
         </CardContent>
       </Card>
       
-      <POS />
+      {/* Live Operations - POS Section */}
+      <Card className="border-l-4 border-l-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 hover:shadow-md transition-all duration-300">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
+              <Activity className="h-5 w-5" />
+              Live Point of Sale
+            </CardTitle>
+            <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 animate-pulse">
+              ● Live
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <POS />
+        </CardContent>
+      </Card>
       
       {canViewAnalytics ? (
         <>
-          <TimeFrameSelector timeFrame={timeFrame} setTimeFrame={setTimeFrame} />
-          <MetricCards timeFrame={timeFrame} />
-          <AnalyticsTabs getChartLabel={getChartLabel} timeFrame={timeFrame} />
+          {/* Analytics Section */}
+          <Card className="border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                <BarChart3 className="h-5 w-5" />
+                Business Analytics
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 space-y-6">
+              <TimeFrameSelector timeFrame={timeFrame} setTimeFrame={setTimeFrame} />
+              <MetricCards timeFrame={timeFrame} />
+              <AnalyticsTabs getChartLabel={getChartLabel} timeFrame={timeFrame} />
+            </CardContent>
+          </Card>
         </>
       ) : (
-        <RecentActivity />
+        <>
+          {/* Recent Activity Section */}
+          <Card className="border-l-4 border-l-orange-500 bg-orange-50/50 dark:bg-orange-950/20">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                <TrendingUp className="h-5 w-5" />
+                Recent Activity
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <RecentActivity />
+            </CardContent>
+          </Card>
+        </>
       )}
+      
+      {/* Color Legend */}
+      <Card className="bg-muted/50">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Info className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">Status Colors</span>
+          </div>
+          <div className="flex flex-wrap gap-4 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded"></div>
+              <span className="text-muted-foreground">QR Operations</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-emerald-500 rounded"></div>
+              <span className="text-muted-foreground">Live Systems</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-blue-500 rounded"></div>
+              <span className="text-muted-foreground">Analytics</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-orange-500 rounded"></div>
+              <span className="text-muted-foreground">Activity</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
