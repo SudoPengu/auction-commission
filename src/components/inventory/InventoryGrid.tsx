@@ -3,23 +3,7 @@ import React from 'react';
 import { InventoryItemCard } from './InventoryItemCard';
 import { Skeleton } from '@/components/ui/skeleton';
 
-interface InventoryItem {
-  id: string;
-  name: string | null;
-  category_name: string | null;
-  condition: 'brand_new' | 'like_new' | 'used_good' | 'used_fair' | 'damaged';
-  quantity: number;
-  sold_quantity: number;
-  starting_bid_price: number;
-  expected_sale_price: number | null;
-  final_sale_price: number | null;
-  status: 'pending_auction' | 'auctioned_sold' | 'auctioned_unsold' | 'walk_in_available' | 'locked';
-  photo_url: string | null;
-  storage_expires_at: string | null;
-  branch_tag: string;
-  created_at: string;
-  updated_at: string;
-}
+import { InventoryItem } from '@/services/inventoryService';
 
 interface InventoryGridProps {
   items: InventoryItem[];

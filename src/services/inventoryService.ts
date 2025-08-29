@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface InventoryItem {
   id: string;
   name: string | null;
-  category_id: bigint | null;
+  category_id: number | null;
   category_name: string | null;
   condition: 'brand_new' | 'like_new' | 'used_good' | 'used_fair' | 'damaged';
   quantity: number;
@@ -77,7 +77,7 @@ export const inventoryService = {
     });
 
     if (error) throw error;
-    return data as QRValidationResult;
+    return data as unknown as QRValidationResult;
   },
 
   // Claim QR and create inventory item atomically
@@ -89,11 +89,16 @@ export const inventoryService = {
   }> {
     const { data, error } = await supabase.rpc('qr_claim_and_create_inventory', {
       p_code: code,
-      p_item: itemData
+      p_item: itemData as any
     });
 
     if (error) throw error;
-    return data;
+    return data as unknown as {
+      success: boolean;
+      error?: string;
+      item_id?: string;
+      qr_id?: string;
+    };
   },
 
   // Upload QR code image to storage
@@ -161,7 +166,7 @@ export const inventoryService = {
   async updateInventoryItem(id: string, updates: Partial<InventoryItem>): Promise<void> {
     const { error } = await supabase
       .from('inventory_items')
-      .update(updates)
+      .update(updates as any)
       .eq('id', id);
 
     if (error) throw error;
