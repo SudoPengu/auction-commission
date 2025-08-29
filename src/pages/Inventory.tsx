@@ -9,6 +9,7 @@ import { QRScannerModal } from '@/components/QRScannerModal';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Package, QrCode, Tags, Plus, ScanLine } from 'lucide-react';
+import { InventoryItem } from '@/services/inventoryService';
 
 const Inventory = () => {
   const [filters, setFilters] = useState({
@@ -30,7 +31,7 @@ const Inventory = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      return data as unknown as InventoryItem[];
     }
   });
 
@@ -47,7 +48,7 @@ const Inventory = () => {
     }
   });
 
-  const filteredItems = useMemo(() => {
+  const filteredItems = useMemo((): InventoryItem[] => {
     return items.filter(item => {
       const matchesStatus = !filters.status || item.status === filters.status;
       const matchesCondition = !filters.condition || item.condition === filters.condition;

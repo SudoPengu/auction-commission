@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface InventoryItem {
   id: string;
   name: string | null;
-  category_id: number | null;
+  category_id: bigint | null;
   category_name: string | null;
   condition: 'brand_new' | 'like_new' | 'used_good' | 'used_fair' | 'damaged';
   quantity: number;
@@ -48,7 +48,7 @@ export interface QRValidationResult {
 
 export interface ItemCreateData {
   name?: string;
-  category_id?: number;
+  category_id?: bigint;
   category_name?: string;
   condition?: 'brand_new' | 'like_new' | 'used_good' | 'used_fair' | 'damaged';
   quantity?: number;
@@ -147,7 +147,7 @@ export const inventoryService = {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data;
+    return data as unknown as InventoryItem[];
   },
 
   // Get single inventory item
@@ -159,11 +159,11 @@ export const inventoryService = {
       .maybeSingle();
 
     if (error) throw error;
-    return data;
+    return data as unknown as InventoryItem | null;
   },
 
   // Update inventory item
-  async updateInventoryItem(id: string, updates: Partial<InventoryItem>): Promise<void> {
+  async updateInventoryItem(id: string, updates: Partial<Omit<InventoryItem, 'category_id'> & { category_id?: number }>): Promise<void> {
     const { error } = await supabase
       .from('inventory_items')
       .update(updates as any)
