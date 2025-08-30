@@ -1,3 +1,4 @@
+
 import { 
   Home, 
   Package2, 
@@ -5,7 +6,8 @@ import {
   BarChart3, 
   User,
   ShoppingCart,
-  UserCircle
+  UserCircle,
+  Gavel
 } from 'lucide-react';
 import { NavItem } from '@/types/navigation';
 
@@ -14,6 +16,12 @@ export const navigationItems: NavItem[] = [
     name: 'Home',
     icon: Home,
     path: '/dashboard',
+    roles: ['staff', 'admin', 'super-admin', 'auction-manager', 'bidder']
+  },
+  {
+    name: 'Live Auctions',
+    icon: Gavel,
+    path: '/auctions',
     roles: ['staff', 'admin', 'super-admin', 'auction-manager', 'bidder']
   },
   {

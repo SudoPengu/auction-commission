@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Users, Eye, DollarSign, TrendingUp, Clock, Gavel, Trophy, Target, Zap } from 'lucide-react';
+import { Plus, Users, Eye, DollarSign, TrendingUp, Clock, Gavel, Trophy, Target, Zap, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { LiveAuctionCard, AuctionEvent } from '@/components/auction/LiveAuctionCard';
 import LiveAuctionHero from '@/components/auction/LiveAuctionHero';
+import LiveAuctionInterface from '@/components/auction/LiveAuctionInterface';
 import { AuctionCalendar } from '@/components/auction/AuctionCalendar';
 import { toast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
@@ -78,6 +79,7 @@ const LiveAuctions: React.FC = () => {
   
   const [auctionEvents, setAuctionEvents] = useState<AuctionEvent[]>(placeholderAuctions);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedAuction, setSelectedAuction] = useState<AuctionEvent | null>(null);
 
   useEffect(() => {
     const fetchAuctions = async () => {
@@ -181,17 +183,30 @@ const LiveAuctions: React.FC = () => {
 
   const handleJoinAuction = (id: string) => {
     const auction = auctionEvents.find(a => a.id === id);
+    if (!auction) return;
+
+    // For live auctions, open the live interface
+    if (auction.status === 'LIVE') {
+      setSelectedAuction(auction);
+      return;
+    }
+
+    // For non-live auctions, show appropriate message
     if (profile?.role === 'bidder') {
       toast({
-        title: "Payment Required",
-        description: "Please pay ₱3,000 entrance fee to join this auction.",
+        title: "Auction Not Live",
+        description: "This auction has not started yet.",
       });
     } else {
       toast({
-        title: "Joining Auction",
-        description: "Welcome to the auction!",
+        title: "Auction Preview",
+        description: "You can manage this auction when it goes live.",
       });
     }
+  };
+
+  const handleBackToList = () => {
+    setSelectedAuction(null);
   };
 
   const getTotalStats = () => {
@@ -226,6 +241,32 @@ const LiveAuctions: React.FC = () => {
     totalAuctions: 47,
     avgPosition: 2.3
   };
+
+  // If an auction is selected for live viewing, show the interface
+  if (selectedAuction) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            onClick={handleBackToList}
+            className="flex items-center gap-2"
+          >
+            ← Back to Auctions
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Live Auction Interface</h1>
+            <p className="text-muted-foreground">Real-time bidding for {selectedAuction.title}</p>
+          </div>
+        </div>
+        
+        <LiveAuctionInterface
+          auctionId={selectedAuction.id}
+          auctionTitle={selectedAuction.title}
+        />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

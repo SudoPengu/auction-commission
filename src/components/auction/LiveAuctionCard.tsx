@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Users, Eye, DollarSign, Clock, Play, Pause, Square, AlertTriangle } from 'lucide-react';
+import { CalendarDays, Users, Eye, DollarSign, Clock, Play, Pause, Square, AlertTriangle, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStopAuctionTimer } from '@/hooks/useStopAuctionTimer';
 
@@ -72,14 +72,25 @@ export const LiveAuctionCard: React.FC<LiveAuctionCardProps> = ({
 
   const getActionButtons = () => {
     if (!isStaffOrAdmin) {
-      if (auction.status === 'LIVE' || auction.status === 'STARTING_SOON') {
+      if (auction.status === 'LIVE') {
         return (
           <Button 
             onClick={() => onJoin?.(auction.id)}
             className="w-full"
-            variant={auction.entrance_fee ? "default" : "outline"}
           >
-            Join Auction (₱3,000 entrance fee)
+            <ArrowRight size={16} className="mr-2" />
+            Join Live Auction
+          </Button>
+        );
+      }
+      if (auction.status === 'STARTING_SOON') {
+        return (
+          <Button 
+            onClick={() => onJoin?.(auction.id)}
+            className="w-full"
+            variant="outline"
+          >
+            View Auction Details
           </Button>
         );
       }
