@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Gavel, Clock, Users, AlertCircle } from 'lucide-react';
+import { Eye, Gavel, Clock, Users, AlertCircle, Mic, Video, Settings, Play, Pause, SkipForward } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuctionRealtime } from '@/hooks/useAuctionRealtime';
 import { supabase } from '@/integrations/supabase/client';
@@ -134,15 +133,66 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Current Lot & Video */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Video Placeholder */}
+          {/* Video Section */}
           <Card>
             <CardContent className="p-0">
-              <div className="aspect-video bg-black rounded-lg flex items-center justify-center text-white">
-                <div className="text-center">
-                  <Eye className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm opacity-75">Live Stream</p>
-                  <p className="text-xs opacity-50">Video feed for viewing only</p>
-                </div>
+              <div className="aspect-video bg-black rounded-lg flex items-center justify-center text-white relative">
+                {isBidder ? (
+                  // Bidder View - Viewing Only
+                  <div className="text-center">
+                    <Eye className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm opacity-75">Live Stream</p>
+                    <p className="text-xs opacity-50">Video feed for viewing only</p>
+                  </div>
+                ) : (
+                  // Company Account View - Host/Auctioneer Controls
+                  <>
+                    <div className="text-center">
+                      <Video className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm opacity-75">Auctioneer View</p>
+                      <p className="text-xs opacity-50">Host controls active</p>
+                    </div>
+                    
+                    {/* Host Controls Overlay */}
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <div className="bg-black/80 backdrop-blur-sm rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                            <span className="text-sm font-medium">LIVE</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Users className="h-4 w-4" />
+                            <span>24 viewers</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
+                            <Play className="h-4 w-4 mr-1" />
+                            Start
+                          </Button>
+                          <Button size="sm" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
+                            <Pause className="h-4 w-4 mr-1" />
+                            Pause
+                          </Button>
+                          <Button size="sm" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
+                            <SkipForward className="h-4 w-4 mr-1" />
+                            Next Lot
+                          </Button>
+                          <div className="flex-1"></div>
+                          <Button size="sm" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
+                            <Mic className="h-4 w-4 mr-1" />
+                            Audio
+                          </Button>
+                          <Button size="sm" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
+                            <Settings className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
