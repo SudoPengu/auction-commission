@@ -24,7 +24,6 @@ const MyBids: React.FC = () => {
   const { profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Mock bid data - replace with real data from your backend
   const mockBids: BidHistory[] = [
     {
       id: 1,
@@ -123,7 +122,6 @@ const MyBids: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-6">
-      {/* Header Section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">My Bids</h1>
@@ -136,7 +134,6 @@ const MyBids: React.FC = () => {
         </div>
       </div>
 
-      {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -183,7 +180,6 @@ const MyBids: React.FC = () => {
         </Card>
       </div>
 
-      {/* Search Bar */}
       <div className="flex items-center space-x-2">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -196,7 +192,6 @@ const MyBids: React.FC = () => {
         </div>
       </div>
 
-      {/* Bids Tabs */}
       <Tabs defaultValue="active" className="space-y-4">
         <TabsList>
           <TabsTrigger value="active">Active Bids ({activeBids.length})</TabsTrigger>
@@ -235,11 +230,6 @@ const MyBids: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        {bid.status === 'outbid' && (
-                          <Button size="sm">
-                            Increase Bid
-                          </Button>
-                        )}
                         <Button size="sm" variant="outline">
                           View Item
                         </Button>
@@ -344,11 +334,6 @@ const MyBids: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        {bid.status === 'outbid' && (
-                          <Button size="sm">
-                            Increase Bid
-                          </Button>
-                        )}
                         <Button size="sm" variant="outline">
                           View Details
                         </Button>
