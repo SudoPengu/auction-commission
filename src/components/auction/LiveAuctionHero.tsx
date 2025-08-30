@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -177,7 +176,7 @@ const LiveAuctionHero: React.FC<LiveAuctionHeroProps> = ({ auction, onJoin }) =>
                   {isCheckingAccess 
                     ? 'Checking Access...' 
                     : hasAccess 
-                      ? 'Join Auction' 
+                      ? 'Start Auction' 
                       : 'Pay Entrance Fee First'
                   }
                 </Button>
@@ -187,7 +186,7 @@ const LiveAuctionHero: React.FC<LiveAuctionHeroProps> = ({ auction, onJoin }) =>
                   className="w-full text-lg py-6"
                   onClick={handleJoinAuction}
                 >
-                  Join Auction
+                  Start Auction
                 </Button>
               )}
             </div>

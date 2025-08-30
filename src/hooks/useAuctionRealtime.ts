@@ -93,8 +93,12 @@ export const useAuctionRealtime = (auctionId?: string) => {
             .order('created_at', { ascending: false })
         ]);
 
-        if (lotsResponse.data) setLots(lotsResponse.data);
-        if (bidsResponse.data) setBids(bidsResponse.data);
+        if (lotsResponse.data) {
+          setLots(lotsResponse.data as AuctionLot[]);
+        }
+        if (bidsResponse.data) {
+          setBids(bidsResponse.data as AuctionBid[]);
+        }
       } catch (error) {
         console.error('Error fetching initial auction data:', error);
       }
@@ -105,3 +109,4 @@ export const useAuctionRealtime = (auctionId?: string) => {
 
   return { lots, bids, isConnected };
 };
+

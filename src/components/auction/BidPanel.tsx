@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -71,7 +70,8 @@ const BidPanel: React.FC<BidPanelProps> = ({
         return;
       }
 
-      const response = data as BidResponse;
+      // Type assertion for the response
+      const response = data as unknown as BidResponse;
 
       if (!response.success) {
         if (response.action === 'pay_entry_fee') {
