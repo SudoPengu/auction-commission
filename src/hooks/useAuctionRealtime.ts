@@ -80,13 +80,14 @@ export const useAuctionRealtime = (auctionId?: string) => {
 
     const fetchInitialData = async () => {
       try {
+        // Temporarily use type assertions for the new tables
         const [lotsResponse, bidsResponse] = await Promise.all([
-          supabase
+          (supabase as any)
             .from('auction_lots')
             .select('*')
             .eq('auction_id', auctionId)
             .order('lot_number'),
-          supabase
+          (supabase as any)
             .from('auction_bids')
             .select('*')
             .eq('auction_id', auctionId)

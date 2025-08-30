@@ -14,6 +14,71 @@ export type Database = {
   }
   public: {
     Tables: {
+      auction_bids: {
+        Row: {
+          amount: number
+          auction_id: string
+          bidder_id: string
+          created_at: string
+          id: string
+          is_highest: boolean
+          lot_id: string
+          source: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          auction_id: string
+          bidder_id: string
+          created_at?: string
+          id?: string
+          is_highest?: boolean
+          lot_id: string
+          source?: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          auction_id?: string
+          bidder_id?: string
+          created_at?: string
+          id?: string
+          is_highest?: boolean
+          lot_id?: string
+          source?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_bids_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auction_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_bids_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auction_events_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_bids_bidder_id_fkey"
+            columns: ["bidder_id"]
+            isOneToOne: false
+            referencedRelation: "bidders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_bids_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "auction_lots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auction_entrance_fees: {
         Row: {
           access_expires_at: string
@@ -140,6 +205,73 @@ export type Database = {
           viewer_count?: number | null
         }
         Relationships: []
+      }
+      auction_lots: {
+        Row: {
+          auction_id: string
+          created_at: string
+          current_bidder_id: string | null
+          current_price: number
+          description: string | null
+          id: string
+          lot_number: number
+          reserve_price: number | null
+          starting_price: number
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          auction_id: string
+          created_at?: string
+          current_bidder_id?: string | null
+          current_price?: number
+          description?: string | null
+          id?: string
+          lot_number: number
+          reserve_price?: number | null
+          starting_price?: number
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          auction_id?: string
+          created_at?: string
+          current_bidder_id?: string | null
+          current_price?: number
+          description?: string | null
+          id?: string
+          lot_number?: number
+          reserve_price?: number | null
+          starting_price?: number
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_lots_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auction_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_lots_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auction_events_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_lots_current_bidder_id_fkey"
+            columns: ["current_bidder_id"]
+            isOneToOne: false
+            referencedRelation: "bidders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       auction_streams: {
         Row: {
@@ -746,6 +878,10 @@ export type Database = {
           resource: string
         }
         Returns: string
+      }
+      place_bid: {
+        Args: { p_amount: number; p_bidder_id: string; p_lot_id: string }
+        Returns: Json
       }
       qr_claim_and_create_inventory: {
         Args: { p_code: string; p_item: Json }

@@ -55,7 +55,8 @@ const BidPanel: React.FC<BidPanelProps> = ({
     setIsSubmitting(true);
 
     try {
-      const { data, error } = await supabase.rpc('place_bid', {
+      // Temporarily call the place_bid function directly
+      const { data, error } = await supabase.rpc('place_bid' as any, {
         p_lot_id: lotId,
         p_amount: bidAmount
       });
