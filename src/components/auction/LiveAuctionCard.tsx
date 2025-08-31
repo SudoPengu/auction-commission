@@ -174,14 +174,14 @@ export const LiveAuctionCard: React.FC<LiveAuctionCardProps> = ({
           {auction.viewer_count !== undefined && (
             <div className="flex items-center gap-2">
               <Eye size={16} className="text-muted-foreground" />
-              <span>{auction.viewer_count} Viewers</span>
+              <span>{auction.viewer_count || 0} Viewers</span>
             </div>
           )}
           
           {auction.total_bids !== undefined && (
             <div className="flex items-center gap-2">
               <Clock size={16} className="text-muted-foreground" />
-              <span>{auction.total_bids} Bids</span>
+              <span>{auction.total_bids || 0} Bids</span>
             </div>
           )}
           
@@ -189,7 +189,7 @@ export const LiveAuctionCard: React.FC<LiveAuctionCardProps> = ({
           {auction.revenue && auction.status === 'COMPLETED' && !profile?.role?.includes('bidder') && (
             <div className="flex items-center gap-2">
               <DollarSign size={16} className="text-muted-foreground" />
-              <span>₱{auction.revenue} Revenue</span>
+              <span>₱{auction.revenue || 0} Revenue</span>
             </div>
           )}
           

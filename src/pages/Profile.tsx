@@ -42,70 +42,19 @@ const Profile: React.FC = () => {
     showBids: false
   });
 
-  // Mock activity log data
-  const mockActivityLog = [
-    {
-      id: '1',
-      action: 'login',
-      resource: 'platform',
-      details: {},
-      ip_address: '192.168.1.100',
-      device_type: 'desktop' as const,
-      location: 'New York, NY',
-      created_at: new Date().toISOString()
-    },
-    {
-      id: '2',
-      action: 'bid_placed',
-      resource: 'vintage_guitar_auction',
-      details: { amount: 450, item_name: 'Vintage Gibson Les Paul' },
-      ip_address: '192.168.1.100',
-      device_type: 'mobile' as const,
-      location: 'New York, NY',
-      created_at: new Date(Date.now() - 3600000).toISOString()
-    },
-    {
-      id: '3',
-      action: 'auction_joined',
-      resource: 'designer_handbags',
-      details: { auction_title: 'Designer Handbags Bonanza', entrance_fee: 15 },
-      ip_address: '192.168.1.100',
-      device_type: 'mobile' as const,
-      location: 'New York, NY',
-      created_at: new Date(Date.now() - 7200000).toISOString()
-    },
-    {
-      id: '4',
-      action: 'payment_processed',
-      resource: 'entrance_fee',
-      details: { amount: 25, purpose: 'Rare Vintage Guitars Auction entrance fee' },
-      ip_address: '192.168.1.100',
-      device_type: 'desktop' as const,
-      location: 'New York, NY',
-      created_at: new Date(Date.now() - 10800000).toISOString()
-    },
-    {
-      id: '5',
-      action: 'profile_updated',
-      resource: 'personal_info',
-      details: { field: 'phone number' },
-      ip_address: '192.168.1.100',
-      device_type: 'desktop' as const,
-      location: 'New York, NY',
-      created_at: new Date(Date.now() - 86400000).toISOString()
-    }
-  ];
+  // TODO: Replace with actual activity log data from backend
+  const mockActivityLog: any[] = [];
 
-  // Mock bidder stats for bidder-friendly display
+  // TODO: Replace with actual bidder stats from backend
   const mockBidderStats = {
-    auctionWins: 12,
-    participationRate: 85,
-    favoriteItems: 24,
-    memberSince: 'March 2024',
-    loyaltyPoints: 1250,
-    winningStreak: 3,
-    totalAuctions: 45,
-    avgPosition: 2.3
+    auctionWins: 0,
+    participationRate: 0,
+    favoriteItems: 0,
+    memberSince: 'N/A',
+    loyaltyPoints: 0,
+    winningStreak: 0,
+    totalAuctions: 0,
+    avgPosition: 0
   };
 
   const getRoleBadgeColor = (role: string) => {
@@ -204,7 +153,7 @@ const Profile: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-1">
                       <Calendar size={14} />
-                      Member since March 2024
+                      Member since N/A
                     </div>
                   </div>
                 </div>
@@ -305,16 +254,16 @@ const Profile: React.FC = () => {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">47</div>
-                    <p className="text-sm text-muted-foreground">Auctions Managed</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">128</div>
-                    <p className="text-sm text-muted-foreground">POS Transactions</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">98.5%</div>
-                    <p className="text-sm text-muted-foreground">System Uptime</p>
+                     <div className="text-2xl font-bold text-primary">0</div>
+                     <p className="text-sm text-muted-foreground">Auctions Managed</p>
+                   </div>
+                   <div className="text-center">
+                     <div className="text-2xl font-bold text-primary">0</div>
+                     <p className="text-sm text-muted-foreground">POS Transactions</p>
+                   </div>
+                   <div className="text-center">
+                     <div className="text-2xl font-bold text-primary">0%</div>
+                     <p className="text-sm text-muted-foreground">System Uptime</p>
                   </div>
                 </div>
               </CardContent>

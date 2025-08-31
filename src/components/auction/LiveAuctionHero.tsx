@@ -106,7 +106,7 @@ const LiveAuctionHero: React.FC<LiveAuctionHeroProps> = ({ auction, onJoin }) =>
             <div className="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1 rounded-lg backdrop-blur-sm">
               <div className="flex items-center gap-2 text-sm">
                 <Users className="h-4 w-4" />
-                {auction.viewer_count?.toLocaleString() || 0}
+                {auction.viewer_count || 0}
               </div>
             </div>
           </div>
@@ -134,22 +134,22 @@ const LiveAuctionHero: React.FC<LiveAuctionHeroProps> = ({ auction, onJoin }) =>
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">Total Bids</p>
-                    <p className="text-2xl font-bold">{auction.total_bids?.toLocaleString() || 0}</p>
+                     <p className="text-2xl font-bold">{auction.total_bids || 0}</p>
                   </div>
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">Active Bidders</p>
-                    <p className="text-2xl font-bold">{Math.floor((auction.viewer_count || 0) * 0.3)}</p>
+                    <p className="text-2xl font-bold">{auction.viewer_count ? Math.floor(auction.viewer_count * 0.3) : 0}</p>
                   </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">Total Bids</p>
-                    <p className="text-2xl font-bold">{auction.total_bids?.toLocaleString() || 0}</p>
+                    <p className="text-2xl font-bold">{auction.total_bids || 0}</p>
                   </div>
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">Current Revenue</p>
-                    <p className="text-2xl font-bold">₱{auction.revenue ? parseFloat(auction.revenue.replace(/[^0-9.-]/g, '')).toLocaleString() : 0}</p>
+                    <p className="text-2xl font-bold">₱{auction.revenue || 0}</p>
                   </div>
                 </div>
               )}
@@ -161,6 +161,7 @@ const LiveAuctionHero: React.FC<LiveAuctionHeroProps> = ({ auction, onJoin }) =>
                   auctionTitle={auction.title}
                   onPaymentSuccess={handlePaymentSuccess}
                   hasAccess={hasAccess}
+                  entranceFee={0}
                 />
               )}
             </div>

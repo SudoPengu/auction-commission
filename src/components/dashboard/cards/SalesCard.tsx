@@ -5,8 +5,9 @@ import { MetricCardProps } from '../types/metrics';
 import MetricCard from './shared/MetricCard';
 
 const SalesCard: React.FC<MetricCardProps> = ({ timeFrame }) => {
-  const value = Math.floor(Math.random() * 100);
-  const change = `${Math.random() > 0.5 ? '+' : '-'}${(Math.random() * 15).toFixed(2)}%`;
+  // TODO: Replace with actual sales data from backend
+  const value = 0;
+  const change = '+0.00%';
 
   return (
     <MetricCard

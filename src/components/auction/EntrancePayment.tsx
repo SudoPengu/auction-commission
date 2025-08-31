@@ -13,13 +13,15 @@ interface EntrancePaymentProps {
   auctionTitle: string;
   onPaymentSuccess: () => void;
   hasAccess?: boolean;
+  entranceFee?: number;
 }
 
 const EntrancePayment: React.FC<EntrancePaymentProps> = ({
   auctionId,
   auctionTitle,
   onPaymentSuccess,
-  hasAccess = false
+  hasAccess = false,
+  entranceFee = 0
 }) => {
   const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -180,7 +182,7 @@ const EntrancePayment: React.FC<EntrancePaymentProps> = ({
           Entrance Fee Required
         </CardTitle>
         <CardDescription className="text-orange-700">
-          Pay ₱3,000 to access "{auctionTitle}" and participate in bidding
+          Pay entrance fee to access "{auctionTitle}" and participate in bidding
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -192,7 +194,7 @@ const EntrancePayment: React.FC<EntrancePaymentProps> = ({
               <p className="text-sm text-gray-600">Non-refundable, single auction access</p>
             </div>
           </div>
-          <Badge variant="secondary" className="text-lg font-bold">₱3,000</Badge>
+          <Badge variant="secondary" className="text-lg font-bold">₱{entranceFee || 0}</Badge>
         </div>
 
         <div className="space-y-2">
@@ -230,7 +232,7 @@ const EntrancePayment: React.FC<EntrancePaymentProps> = ({
             ? 'Verifying Payment...' 
             : isProcessing 
               ? 'Processing...' 
-              : 'Pay ₱3,000 & Get Access'
+              : `Pay ₱${entranceFee || 0} & Get Access`
           }
         </Button>
 

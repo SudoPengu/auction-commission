@@ -13,65 +13,14 @@ const BidderProfiles: React.FC = () => {
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super-admin';
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Mock bidder data
-  const bidders = [
-    {
-      id: 'B001',
-      name: 'Angela Mae Santos',
-      email: 'angela.santos24@gmail.com',
-      phone: '+63 917 542 8931',
-      status: 'Active',
-      totalPurchases: '₱12,500',
-      bidCount: 42,
-      lastActive: '2 days ago'
-    },
-    {
-      id: 'B002',
-      name: 'Jericho Dela Cruz',
-      email: 'jericho.dc@yahoo.com',
-      phone: '+63 915 337 1086',
-      status: 'Active',
-      totalPurchases: '₱8,750',
-      bidCount: 28,
-      lastActive: '5 days ago'
-    },
-    {
-      id: 'B003',
-      name: 'Camille Joy Ramirez',
-      email: 'camille.ramirez@outlook.com',
-      phone: '+63 927 649 2204',
-      status: 'Inactive',
-      totalPurchases: '₱3,200',
-      bidCount: 15,
-      lastActive: '3 months ago'
-    },
-    {
-      id: 'B004',
-      name: 'Paolo Enriquez',
-      email: 'paolo.enriquez27@gmail.com',
-      phone: '+63 918 471 3057',
-      status: 'Active',
-      totalPurchases: '₱21,300',
-      bidCount: 67,
-      lastActive: 'Today'
-    },
-    {
-      id: 'B005',
-      name: 'Krizia Anne Mendoza',
-      email: 'krizia.mendoza@yahoo.com',
-      phone: '+63 926 884 7190',
-      status: 'Active',
-      totalPurchases: '₱5,600',
-      bidCount: 19,
-      lastActive: '1 week ago'
-    }
-  ];
+  // TODO: Replace with actual bidder data from backend
+  const bidders: any[] = [];
   
   // Filter bidders based on search term
   const filteredBidders = bidders.filter(bidder => 
-    bidder.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    bidder.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    bidder.id.toLowerCase().includes(searchTerm.toLowerCase())
+    bidder.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    bidder.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    bidder.id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
   return (
@@ -177,7 +126,7 @@ const BidderProfiles: React.FC = () => {
               
               {filteredBidders.length === 0 && (
                 <div className="text-center py-6 text-muted-foreground">
-                  No bidders found matching your search criteria
+                  {searchTerm ? 'No bidders found matching your search criteria' : 'No bidders registered yet'}
                 </div>
               )}
             </div>

@@ -6,16 +6,20 @@ import { usePOSCart } from '@/contexts/POSCartContext';
 const POSProductGrid = () => {
   const { addToCart } = usePOSCart();
 
-  const mockProducts = Array.from({ length: 20 }, (_, i) => ({
-    id: `product-${i + 1}`,
-    name: `Product ${i + 1}`,
-    price: (i + 1) * 100,
-    category: ['clothing', 'electronics', 'home'][i % 3]
-  }));
+  // TODO: Replace with actual products from backend
+  const products: any[] = [];
+
+  if (products.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <p>No products available</p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-      {mockProducts.map((product) => (
+      {products.map((product) => (
         <Card 
           key={product.id} 
           className="cursor-pointer hover:border-primary transition-colors"

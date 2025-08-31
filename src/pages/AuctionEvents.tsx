@@ -9,40 +9,8 @@ const AuctionEvents: React.FC = () => {
   const { profile } = useAuth();
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super-admin';
   
-  // Mock auction events data
-  const auctionEvents = [
-    {
-      id: 1,
-      title: 'Summer Art Auction',
-      date: 'June 15, 2025',
-      time: '3:00 PM - 6:00 PM',
-      location: 'Main Gallery',
-      status: 'Upcoming',
-      itemCount: 241,
-      registeredBidders: 12
-    },
-    {
-      id: 2,
-      title: 'Vintage Collectibles',
-      date: 'July 5, 2025',
-      time: '1:00 PM - 5:00 PM',
-      location: 'East Wing',
-      status: 'Upcoming',
-      itemCount: 148,
-      registeredBidders: 30
-    },
-    {
-      id: 3,
-      title: 'Spring Showcase',
-      date: 'April 10, 2025',
-      time: '2:00 PM - 4:00 PM',
-      location: 'West Hall',
-      status: 'Completed',
-      itemCount: 236,
-      registeredBidders: 28,
-      totalSales: '$42,500'
-    }
-  ];
+  // TODO: Replace with actual auction events data from backend
+  const auctionEvents: any[] = [];
   
   return (
     <div className="space-y-6">
@@ -68,8 +36,13 @@ const AuctionEvents: React.FC = () => {
         )}
       </div>
       
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {auctionEvents.map((event) => (
+      {auctionEvents.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <p>No auction events scheduled</p>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {auctionEvents.map((event) => (
           <Card key={event.id} className={event.status === 'Completed' ? 'bg-muted/20' : ''}>
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
@@ -110,8 +83,9 @@ const AuctionEvents: React.FC = () => {
               </Button>
             </CardFooter>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

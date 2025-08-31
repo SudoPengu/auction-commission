@@ -120,15 +120,13 @@ const LiveAuctions: React.FC = () => {
           })}`,
           status: auction.status === 'live' ? 'LIVE' : 
                  auction.status === 'upcoming' ? 'UPCOMING' : 'COMPLETED',
-          itemCount: Math.floor(Math.random() * 200) + 50, // Mock data for now
+          itemCount: 0, // TODO: Get actual item count from backend
           viewer_count: auction.viewer_count || 0,
           total_bids: auction.total_bids || 0,
           revenue: auction.revenue?.toString() || '0',
-          entrance_fee: auction.entrance_fee ? Number(auction.entrance_fee) : 3000,
-          platform: 'youtube', // Mock data
-          duration: auction.status === 'completed' ? 
-            `${Math.floor(Math.random() * 4) + 1}h ${Math.floor(Math.random() * 60)}m` : 
-            undefined
+          entrance_fee: auction.entrance_fee ? Number(auction.entrance_fee) : 0,
+          platform: 'youtube', // TODO: Get actual platform from backend
+          duration: undefined // TODO: Calculate actual duration
         }));
 
         // Use real auctions if data exists, otherwise keep placeholders
