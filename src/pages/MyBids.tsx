@@ -24,56 +24,8 @@ const MyBids: React.FC = () => {
   const { profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const mockBids: BidHistory[] = [
-    {
-      id: 1,
-      auctionTitle: 'Rare Vintage Guitars Auction',
-      itemName: 'Gibson Les Paul Standard 1959',
-      bidAmount: 15000,
-      maxBid: 18000,
-      currentHighBid: 16500,
-      status: 'outbid',
-      bidTime: '2 hours ago',
-      auctionEndTime: 'Live - ends in 4h 23m',
-      itemImage: '/placeholder.svg'
-    },
-    {
-      id: 2,
-      auctionTitle: 'Designer Handbags Bonanza',
-      itemName: 'Hermès Birkin Bag 35cm',
-      bidAmount: 8500,
-      maxBid: 12000,
-      currentHighBid: 8500,
-      status: 'winning',
-      bidTime: '45 minutes ago',
-      auctionEndTime: 'Starts in 2h 15m',
-      itemImage: '/placeholder.svg'
-    },
-    {
-      id: 3,
-      auctionTitle: 'Art & Collectibles Gala',
-      itemName: 'Original Picasso Sketch',
-      bidAmount: 25000,
-      maxBid: 25000,
-      currentHighBid: 25000,
-      status: 'won',
-      bidTime: 'Yesterday',
-      auctionEndTime: 'Completed - Jun 14, 2025',
-      itemImage: '/placeholder.svg'
-    },
-    {
-      id: 4,
-      auctionTitle: 'Electronics Clearance',
-      itemName: 'MacBook Pro M3 Max',
-      bidAmount: 2800,
-      maxBid: 3200,
-      currentHighBid: 3100,
-      status: 'lost',
-      bidTime: '3 days ago',
-      auctionEndTime: 'Completed - Jun 13, 2025',
-      itemImage: '/placeholder.svg'
-    }
-  ];
+  // TODO: Replace with actual bid data from backend
+  const mockBids: BidHistory[] = [];
 
   const getStatusBadge = (status: string) => {
     switch (status) {

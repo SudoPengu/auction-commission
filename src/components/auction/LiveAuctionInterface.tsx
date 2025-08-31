@@ -163,7 +163,7 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
                           </div>
                           <div className="flex items-center gap-2 text-sm">
                             <Users className="h-4 w-4" />
-                            <span>24 viewers</span>
+                            <span>{0} viewers</span>
                           </div>
                         </div>
                         

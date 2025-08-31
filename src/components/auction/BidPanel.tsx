@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { BidResponse } from '@/types/auction';
 import { toast } from '@/hooks/use-toast';
 
-const PRESET_BIDS = [20, 50, 100, 200, 500, 1000];
+const PRESET_BIDS: number[] = [];
 
 interface BidPanelProps {
   lotId: string;
