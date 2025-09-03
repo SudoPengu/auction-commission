@@ -143,63 +143,38 @@ const Login: React.FC = () => {
     });
   };
 
-  // Handle signup form submission
+  // Handle signup form submission using secure edge function
   const handleSignupSubmit = async (values: SignupFormValues) => {
     setIsSubmitting(true);
     try {
-      // Format phone number to ensure +63 format
-      let formattedPhone = values.phoneNumber;
-      if (formattedPhone.startsWith("09")) {
-        formattedPhone = "+63" + formattedPhone.substring(1);
-      }
-
-      // Create the user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: values.email,
-        password: values.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: values.fullName,
-            phone_number: formattedPhone,
-            role: "bidder" // Always set role to bidder
-          }
+      // Call the secure signup edge function
+      const { data, error } = await supabase.functions.invoke('auth-signup', {
+        body: {
+          fullName: values.fullName,
+          email: values.email,
+          password: values.password,
+          confirmPassword: values.confirmPassword,
+          phoneNumber: values.phoneNumber
         }
       });
 
-      if (authError) {
-        throw authError;
+      if (error) {
+        throw new Error(error.message || 'Failed to create account');
       }
 
-      // Create a bidder profile in the bidders table if auth was successful
-      if (authData.user) {
-        const { error: profileError } = await supabase
-          .from('bidders')
-          .insert([
-            {
-              id: authData.user.id,
-              full_name: values.fullName,
-              email: values.email,
-              phone_number: formattedPhone,
-              loyalty_points: 0
-            }
-          ]);
-
-        if (profileError) {
-          console.error("Error creating bidder profile:", profileError);
-          // If there's an error creating the profile, we should still consider signup successful
-          // since the auth user was created
-        }
-
-        toast({
-          title: "Account created successfully",
-          description: "You can now log in with your new account"
-        });
-        
-        // Switch to login tab
-        setActiveTab("login");
-        loginForm.setValue("identifier", values.email);
+      if (data?.error) {
+        throw new Error(data.error);
       }
+
+      // Success - switch to login tab and prefill email
+      toast({
+        title: "Account created successfully!",
+        description: "Please log in with your new account."
+      });
+      
+      setActiveTab("login");
+      loginForm.setValue("identifier", data.email || values.email);
+      
     } catch (error: any) {
       console.error('Signup error:', error);
       toast({

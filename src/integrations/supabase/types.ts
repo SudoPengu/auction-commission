@@ -365,6 +365,7 @@ export type Database = {
           id: string
           loyalty_points: number
           phone_number: string | null
+          role: string
           updated_at: string
         }
         Insert: {
@@ -374,6 +375,7 @@ export type Database = {
           id?: string
           loyalty_points?: number
           phone_number?: string | null
+          role?: string
           updated_at?: string
         }
         Update: {
@@ -383,6 +385,7 @@ export type Database = {
           id?: string
           loyalty_points?: number
           phone_number?: string | null
+          role?: string
           updated_at?: string
         }
         Relationships: []

@@ -45,6 +45,9 @@ enable_confirmations = false
 enabled = true
 ip_version = "ipv6"
 
+[functions.auth-signup]
+verify_jwt = false
+
 [functions.create-entrance-payment]
 verify_jwt = true
 
