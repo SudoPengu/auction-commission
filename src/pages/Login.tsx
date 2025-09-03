@@ -159,21 +159,35 @@ const Login: React.FC = () => {
       });
 
       if (error) {
-        throw new Error(error.message || 'Failed to create account');
+        console.error('Signup function error:', error);
+        toast({
+          title: "Signup Failed",
+          description: error.message || "Failed to create account. Please try again.",
+          variant: "destructive",
+        });
+        return;
       }
 
-      if (data?.error) {
-        throw new Error(data.error);
+      console.log('Signup response:', data);
+      
+      // Check if the response indicates failure (new structured format)
+      if (data && !data.success) {
+        toast({
+          title: "Signup Failed",
+          description: data.error || "Failed to create account. Please try again.",
+          variant: "destructive",
+        });
+        return;
       }
-
-      // Success - switch to login tab and prefill email
+      
       toast({
-        title: "Account created successfully!",
-        description: "Please log in with your new account."
+        title: "Account Created!",
+        description: "Your account has been created successfully. Please log in.",
       });
       
-      setActiveTab("login");
-      loginForm.setValue("identifier", data.email || values.email);
+      // Clear the form and switch to login tab
+      signupForm.reset();
+      setActiveTab('login');
       
     } catch (error: any) {
       console.error('Signup error:', error);

@@ -87,10 +87,12 @@ serve(async (req) => {
 
     if (existingEntrance) {
       return new Response(JSON.stringify({ 
+        success: false,
         error: 'Already have paid access to this auction',
-        has_access: true 
+        has_access: true,
+        details: 'You already have valid access to this auction'
       }), {
-        status: 400,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -205,11 +207,28 @@ serve(async (req) => {
     console.error('Error stack:', error.stack);
     console.error('=== CREATE ENTRANCE PAYMENT FUNCTION END (ERROR) ===');
     
+    // Categorize errors for better user experience
+    let userError = 'Payment system temporarily unavailable';
+    let isPaymongoError = false;
+    
+    if (error.message.includes('Payment provider error')) {
+      userError = 'Payment service error - please try again';
+      isPaymongoError = true;
+    } else if (error.message.includes('Unauthorized')) {
+      userError = 'Authentication required - please log in';
+    } else if (error.message.includes('auction_id')) {
+      userError = 'Invalid auction - please refresh and try again';
+    } else if (error.message.includes('Database error')) {
+      userError = 'Database error - please try again';
+    }
+    
     return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error',
-      details: error.toString()
+      success: false,
+      error: userError,
+      details: error.message || 'Internal server error',
+      provider_error: isPaymongoError ? error.message : null
     }), {
-      status: 500,
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

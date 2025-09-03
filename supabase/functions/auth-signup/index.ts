@@ -82,17 +82,8 @@ Deno.serve(async (req) => {
       formattedPhone = "+63" + formattedPhone.substring(1);
     }
 
-    // Check if email already exists in Auth
-    const { data: existingUser } = await supabaseServiceRole.auth.admin.getUserByEmail(trimmedEmail);
-    if (existingUser.user) {
-      return new Response(
-        JSON.stringify({ error: 'Email already registered' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Check if email already exists in bidders table (case-insensitive)
-    const { data: existingBidder, error: checkError } = await supabase
+    // Check if email already exists in bidders table (case-insensitive) using service role
+    const { data: existingBidder, error: checkError } = await supabaseServiceRole
       .from('bidders')
       .select('id')
       .ilike('email', trimmedEmail)
@@ -101,15 +92,23 @@ Deno.serve(async (req) => {
     if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = not found, which is what we want
       console.error('Error checking existing bidder:', checkError);
       return new Response(
-        JSON.stringify({ error: 'Database error occurred' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          success: false, 
+          error: 'Database error occurred',
+          details: 'Unable to verify email availability'
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     if (existingBidder) {
       return new Response(
-        JSON.stringify({ error: 'Email already registered' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          success: false, 
+          error: 'Email already registered',
+          details: 'Please use a different email address or try logging in'
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -128,23 +127,35 @@ Deno.serve(async (req) => {
       console.error('Auth error:', authError);
       
       // Handle specific Auth errors
-      if (authError.message.includes('already registered')) {
+      if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
         return new Response(
-          JSON.stringify({ error: 'Email already registered' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ 
+            success: false, 
+            error: 'Email already registered',
+            details: 'This email is already associated with an account'
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
       return new Response(
-        JSON.stringify({ error: 'Failed to create account' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          success: false, 
+          error: 'Failed to create account',
+          details: authError.message || 'Authentication service error'
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     if (!authData.user) {
       return new Response(
-        JSON.stringify({ error: 'Failed to create user account' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          success: false, 
+          error: 'Failed to create user account',
+          details: 'User creation returned empty result'
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -169,8 +180,12 @@ Deno.serve(async (req) => {
       await supabaseServiceRole.auth.admin.deleteUser(authData.user.id);
       
       return new Response(
-        JSON.stringify({ error: 'Failed to create bidder profile' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          success: false, 
+          error: 'Failed to create bidder profile',
+          details: profileError.message || 'Database error during profile creation'
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -188,8 +203,12 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Signup error:', error);
     return new Response(
-      JSON.stringify({ error: 'An unexpected error occurred' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        success: false, 
+        error: 'An unexpected error occurred',
+        details: error.message || 'Internal server error'
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

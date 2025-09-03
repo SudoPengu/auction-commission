@@ -156,11 +156,28 @@ serve(async (req) => {
     console.error('Error stack:', error.stack);
     console.error('=== VERIFY PAYMENT FUNCTION END (ERROR) ===');
     
+    // Categorize errors for better user experience
+    let userError = 'Payment verification temporarily unavailable';
+    let isPaymongoError = false;
+    
+    if (error.message.includes('Payment verification failed')) {
+      userError = 'Unable to verify payment status - please try again';
+      isPaymongoError = true;
+    } else if (error.message.includes('Unauthorized')) {
+      userError = 'Authentication required - please log in';
+    } else if (error.message.includes('payment_intent_id')) {
+      userError = 'Invalid payment reference - please try again';
+    } else if (error.message.includes('Entrance record not found')) {
+      userError = 'Payment record not found - please contact support';
+    }
+    
     return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error',
-      details: error.toString()
+      success: false,
+      error: userError,
+      details: error.message || 'Internal server error',
+      provider_error: isPaymongoError ? error.message : null
     }), {
-      status: 500,
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
