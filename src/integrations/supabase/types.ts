@@ -849,20 +849,14 @@ export type Database = {
       }
     }
     Functions: {
-      can_change_display_name: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
-      generate_inventory_id: {
-        Args: { prefix?: string }
-        Returns: string
-      }
+      can_change_display_name: { Args: { user_id: string }; Returns: boolean }
+      generate_inventory_id: { Args: { prefix?: string }; Returns: string }
       get_current_user_role: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
       has_any_role: {
-        Args: Record<PropertyKey, never>
+        Args: { required_roles: Database["public"]["Enums"]["user_role"][] }
         Returns: boolean
       }
       has_role: {
@@ -890,10 +884,7 @@ export type Database = {
         Args: { p_code: string; p_item: Json }
         Returns: Json
       }
-      qr_validate: {
-        Args: { p_code: string }
-        Returns: Json
-      }
+      qr_validate: { Args: { p_code: string }; Returns: Json }
       reserve_inventory_labels: {
         Args: { p_branch?: string; p_count: number }
         Returns: string[]
@@ -902,10 +893,7 @@ export type Database = {
         Args: { p_branch?: string; p_count: number }
         Returns: string[]
       }
-      update_display_name: {
-        Args: { new_display_name: string }
-        Returns: Json
-      }
+      update_display_name: { Args: { new_display_name: string }; Returns: Json }
       update_inventory_status: {
         Args: {
           p_final_price?: number
