@@ -22,7 +22,10 @@ const USER_EMAIL_MAP: Record<string, string> = {
   'staff0': 'blueskyincstaff.0@outlook.com',
   'superadmin': 'blueskyincsupera.0@outlook.com',
   'manager0': 'blueskyincmanager.0@outlook.com',
-  'bidder0': 'blueskyincbidder.0@outlook.com'
+  'bidder0': 'blueskyincbidder.0@outlook.com',
+  // Default test accounts
+  'bidder-account': 'bidder-account@blueskyauction.com',
+  'admin-account': 'admin-account@blueskyauction.com'
 };
 
 // Define a schema for login form validation
@@ -105,6 +108,14 @@ const Login: React.FC = () => {
     setIsSubmitting(true);
     try {
       const loginEmail = USER_EMAIL_MAP[values.identifier] || values.identifier;
+      
+      // DEBUG: Log which Supabase instance we're connecting to
+      console.log("=== LOGIN DEBUG ===");
+      console.log("Supabase URL:", import.meta.env.VITE_SUPABASE_URL);
+      console.log("Login email:", loginEmail);
+      console.log("Password length:", values.password.length);
+      console.log("===================");
+      
       const success = await login(loginEmail, values.password);
       
       if (success) {
@@ -143,58 +154,85 @@ const Login: React.FC = () => {
     });
   };
 
-  // Handle signup form submission using secure edge function
+  // Handle signup form submission
   const handleSignupSubmit = async (values: SignupFormValues) => {
     setIsSubmitting(true);
     try {
-      // Call the secure signup edge function
-      const { data, error } = await supabase.functions.invoke('auth-signup', {
-        body: {
-          fullName: values.fullName,
-          email: values.email,
-          password: values.password,
-          confirmPassword: values.confirmPassword,
-          phoneNumber: values.phoneNumber
+      // Try Edge Function first, fallback to direct signup
+      let signupSuccess = false;
+      
+      try {
+        // Call the secure signup edge function
+        const { data, error } = await supabase.functions.invoke('auth-signup', {
+          body: {
+            fullName: values.fullName,
+            email: values.email,
+            password: values.password,
+            confirmPassword: values.confirmPassword,
+            phoneNumber: values.phoneNumber
+          }
+        });
+
+        if (error) {
+          throw error; // Fall through to direct signup
         }
-      });
 
-      if (error) {
-        console.error('Signup function error:', error);
-        toast({
-          title: "Signup Failed",
-          description: error.message || "Failed to create account. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
+        if (data && !data.success) {
+          throw new Error(data.error || 'Signup failed');
+        }
 
-      console.log('Signup response:', data);
-      
-      // Check if the response indicates failure (new structured format)
-      if (data && !data.success) {
-        toast({
-          title: "Signup Failed",
-          description: data.error || "Failed to create account. Please try again.",
-          variant: "destructive",
+        signupSuccess = true;
+      } catch (edgeFunctionError: any) {
+        // Edge Function not available, use direct signup
+        console.warn('Edge Function not available, using direct signup:', edgeFunctionError);
+        
+        // Format phone number if provided
+        let formattedPhone = values.phoneNumber?.trim();
+        if (formattedPhone && formattedPhone.startsWith("09")) {
+          formattedPhone = "+63" + formattedPhone.substring(1);
+        }
+
+        // Direct signup with Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: values.email.trim().toLowerCase(),
+          password: values.password,
+          options: {
+            data: {
+              full_name: values.fullName.trim(),
+              phone_number: formattedPhone
+            },
+            emailRedirectTo: window.location.origin
+          }
         });
-        return;
+
+        if (authError) {
+          throw authError;
+        }
+
+        if (!authData.user) {
+          throw new Error('Failed to create user account');
+        }
+
+        signupSuccess = true;
       }
       
-      toast({
-        title: "Account Created!",
-        description: "Your account has been created successfully. Please log in.",
-      });
-      
-      // Clear the form and switch to login tab
-      signupForm.reset();
-      setActiveTab('login');
+      if (signupSuccess) {
+        toast({
+          title: "Account Created!",
+          description: "Your account has been created successfully. Please log in.",
+        });
+        
+        // Clear the form and switch to login tab
+        signupForm.reset();
+        setActiveTab('login');
+      }
       
     } catch (error: any) {
       console.error('Signup error:', error);
       toast({
         variant: "destructive",
-        title: "Signup Error",
-        description: error.message || "An unexpected error occurred. Please try again."
+        title: "Signup Failed",
+        description: error.message || "Failed to create account. Please try again."
       });
     } finally {
       setIsSubmitting(false);
