@@ -11,32 +11,52 @@ import { AuctionLot, BidResponse } from '@/types/auction';
 import { toast } from '@/hooks/use-toast';
 import { InventoryItem } from '@/services/inventoryService';
 
-// Shared WebRTC ICE configuration with STUN + TURN servers
-// TURN servers are required for connections across different networks (e.g. mobile data)
-const ICE_SERVERS_CONFIG: RTCConfiguration = {
-  iceServers: [
+// Build ICE servers list — supports custom TURN via env vars
+const buildIceServers = (): RTCIceServer[] => {
+  const servers: RTCIceServer[] = [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
     { urls: 'stun:stun3.l.google.com:19302' },
     { urls: 'stun:stun4.l.google.com:19302' },
-    // Free TURN relay servers (required for mobile data / symmetric NAT)
-    {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
-    },
-    {
-      urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
-    },
-    {
-      urls: 'turns:openrelay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
-    },
-  ],
+  ];
+
+  // Custom TURN server from env vars (recommended: sign up at https://www.metered.ca/stun-turn for free)
+  const turnUrl = import.meta.env.VITE_TURN_SERVER_URL;
+  const turnUser = import.meta.env.VITE_TURN_USERNAME;
+  const turnCred = import.meta.env.VITE_TURN_CREDENTIAL;
+
+  if (turnUrl && turnUser && turnCred) {
+    // Add custom TURN server (UDP, TCP, and TLS variants)
+    servers.push(
+      { urls: turnUrl, username: turnUser, credential: turnCred },
+    );
+    // If the URL is a single turn: URL, also add TCP and TLS variants
+    if (turnUrl.startsWith('turn:')) {
+      const host = turnUrl.replace('turn:', '');
+      servers.push(
+        { urls: `turn:${host}:443?transport=tcp`, username: turnUser, credential: turnCred },
+        { urls: `turns:${host}:443`, username: turnUser, credential: turnCred },
+      );
+    }
+    console.log('[WebRTC] Using custom TURN server:', turnUrl);
+  } else {
+    // Fallback: free public TURN servers (may be unreliable)
+    servers.push(
+      { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turns:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:relay1.expressturn.com:3478', username: 'efQBPJVOZC9GIJSYEX', credential: 'g5wkXBjQQyCuMmqL' },
+    );
+    console.log('[WebRTC] Using fallback free TURN servers');
+  }
+
+  return servers;
+};
+
+// Shared WebRTC ICE configuration with STUN + TURN servers
+const ICE_SERVERS_CONFIG: RTCConfiguration = {
+  iceServers: buildIceServers(),
   iceCandidatePoolSize: 10,
 };
 
@@ -80,6 +100,9 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
   // MediaRecorder for chunk-based streaming (fallback/simple approach)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
+  
+  // Mobile autoplay state
+  const [needsTapToPlay, setNeedsTapToPlay] = useState(false);
 
   const isBidder = profile?.role === 'bidder';
   const isStaffOrAdmin = profile?.role && ['staff', 'admin', 'super-admin', 'auction-manager'].includes(profile.role);
@@ -357,17 +380,22 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
         if (bidderVideoRef.current) {
           console.log('[WebRTC Bidder] Assigning stream to video element');
           bidderVideoRef.current.srcObject = stream;
+          bidderVideoRef.current.muted = true; // Must be muted for autoplay on mobile
+          bidderVideoRef.current.playsInline = true;
           setIsStreamActive(true);
           setWebrtcConnected(true);
           
-          // Try to play the video
-          bidderVideoRef.current.play()
-            .then(() => {
+          // Try to play the video — if blocked on mobile, show tap-to-play
+          const playPromise = bidderVideoRef.current.play();
+          if (playPromise !== undefined) {
+            playPromise.then(() => {
               console.log('[WebRTC Bidder] Video play() succeeded');
-            })
-            .catch(err => {
-              console.error('[WebRTC Bidder] Error playing video:', err);
+              setNeedsTapToPlay(false);
+            }).catch(err => {
+              console.warn('[WebRTC Bidder] Auto-play blocked on mobile:', err);
+              setNeedsTapToPlay(true);
             });
+          }
         } else {
           console.warn('[WebRTC Bidder] Video ref is null!');
         }
@@ -1073,23 +1101,60 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
                       autoPlay
                       playsInline
                       muted
+                      webkit-playsinline="true"
                       className="w-full h-full object-cover"
                       onLoadedMetadata={() => {
                         console.log('[WebRTC Bidder] Video metadata loaded');
                         if (bidderVideoRef.current) {
-                          bidderVideoRef.current.play().catch(err => {
-                            console.error('[WebRTC Bidder] Auto-play error:', err);
-                          });
+                          const playPromise = bidderVideoRef.current.play();
+                          if (playPromise !== undefined) {
+                            playPromise.then(() => {
+                              console.log('[WebRTC Bidder] Auto-play succeeded');
+                              setNeedsTapToPlay(false);
+                            }).catch(err => {
+                              console.warn('[WebRTC Bidder] Auto-play blocked, showing tap-to-play:', err);
+                              setNeedsTapToPlay(true);
+                            });
+                          }
                         }
                       }}
                       onCanPlay={() => {
                         console.log('[WebRTC Bidder] Video can play');
                         setIsStreamActive(true);
                       }}
+                      onPlaying={() => {
+                        console.log('[WebRTC Bidder] Video is playing');
+                        setNeedsTapToPlay(false);
+                        setIsStreamActive(true);
+                      }}
                       onError={(e) => {
                         console.error('[WebRTC Bidder] Video error:', e);
                       }}
                     />
+                    
+                    {/* Tap-to-play overlay for mobile browsers that block autoplay */}
+                    {needsTapToPlay && isStreamActive && (
+                      <div 
+                        className="absolute inset-0 flex items-center justify-center text-white bg-black/70 cursor-pointer z-10"
+                        onClick={() => {
+                          if (bidderVideoRef.current) {
+                            bidderVideoRef.current.muted = true;
+                            bidderVideoRef.current.play().then(() => {
+                              setNeedsTapToPlay(false);
+                              console.log('[WebRTC Bidder] Manual play succeeded');
+                            }).catch(err => {
+                              console.error('[WebRTC Bidder] Manual play failed:', err);
+                            });
+                          }
+                        }}
+                      >
+                        <div className="text-center">
+                          <Play className="h-16 w-16 mx-auto mb-3 opacity-90" />
+                          <p className="text-lg font-medium">Tap to Play</p>
+                          <p className="text-sm opacity-75">Stream is ready</p>
+                        </div>
+                      </div>
+                    )}
                     
                     {isStreamActive && bidderVideoRef.current?.srcObject ? (
                       <>
