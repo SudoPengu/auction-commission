@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Users, Eye, DollarSign, Clock, Play, Pause, Square, AlertTriangle, ArrowRight } from 'lucide-react';
+import { CalendarDays, Users, Eye, DollarSign, Clock, Play, Pause, Square, AlertTriangle, ArrowRight, Trash2, Video } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStopAuctionTimer } from '@/hooks/useStopAuctionTimer';
 
@@ -30,6 +30,7 @@ interface LiveAuctionCardProps {
   onPause?: (id: string) => void;
   onStop?: (id: string) => void;
   onJoin?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export const LiveAuctionCard: React.FC<LiveAuctionCardProps> = ({
@@ -37,7 +38,8 @@ export const LiveAuctionCard: React.FC<LiveAuctionCardProps> = ({
   onStart,
   onPause,
   onStop,
-  onJoin
+  onJoin,
+  onDelete
 }) => {
   const { profile } = useAuth();
   const isStaffOrAdmin = profile?.role && ['staff', 'admin', 'super-admin', 'auction-manager'].includes(profile.role);
@@ -109,28 +111,37 @@ export const LiveAuctionCard: React.FC<LiveAuctionCardProps> = ({
         );
       case 'LIVE':
         return (
-          <div className="flex gap-2">
-            <Button onClick={() => onPause?.(auction.id)} variant="outline" size="sm">
-              <Pause size={16} />
-            </Button>
+          <div className="space-y-2">
             <Button 
-              onClick={stopTimer.startTimer}
-              disabled={stopTimer.isTimerActive}
-              variant="destructive" 
-              className="flex-1"
+              onClick={() => onJoin?.(auction.id)} 
+              className="w-full"
             >
-              {stopTimer.isTimerActive ? (
-                <>
-                  <AlertTriangle size={16} className="mr-2" />
-                  Confirm Stop ({stopTimer.countdown}s)
-                </>
-              ) : (
-                <>
-                  <Square size={16} className="mr-2" />
-                  Stop Auction
-                </>
-              )}
+              <Video size={16} className="mr-2" />
+              Go to Stream
             </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => onPause?.(auction.id)} variant="outline" size="sm">
+                <Pause size={16} />
+              </Button>
+              <Button 
+                onClick={stopTimer.startTimer}
+                disabled={stopTimer.isTimerActive}
+                variant="destructive" 
+                className="flex-1"
+              >
+                {stopTimer.isTimerActive ? (
+                  <>
+                    <AlertTriangle size={16} className="mr-2" />
+                    Confirm Stop ({stopTimer.countdown}s)
+                  </>
+                ) : (
+                  <>
+                    <Square size={16} className="mr-2" />
+                    Stop Auction
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         );
       default:
@@ -210,8 +221,19 @@ export const LiveAuctionCard: React.FC<LiveAuctionCardProps> = ({
         )}
       </CardContent>
 
-      <CardFooter className="pt-0">
+      <CardFooter className="pt-0 flex flex-col gap-2">
         {getActionButtons()}
+        {isStaffOrAdmin && onDelete && (
+          <Button 
+            onClick={() => onDelete(auction.id)}
+            variant="outline"
+            size="sm"
+            className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 size={16} className="mr-2" />
+            Delete Auction
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Gavel, Clock, Users, AlertCircle, Mic, Video, Settings, Play, Pause, SkipForward } from 'lucide-react';
+import { Eye, Gavel, Clock, Users, AlertCircle, Mic, Video, Settings, Play, Pause, SkipForward, Camera, VideoOff, Package, Plus, Square } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuctionRealtime } from '@/hooks/useAuctionRealtime';
 import { supabase } from '@/integrations/supabase/client';
 import BidPanel from './BidPanel';
 import { AuctionLot, BidResponse } from '@/types/auction';
+import { toast } from '@/hooks/use-toast';
+import { InventoryItem } from '@/services/inventoryService';
 
 interface LiveAuctionInterfaceProps {
   auctionId: string;
@@ -23,6 +25,32 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
   const [hasAccess, setHasAccess] = useState(false);
   const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   const [currentLot, setCurrentLot] = useState<AuctionLot | null>(null);
+  
+  // Camera streaming state
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isLoadingCamera, setIsLoadingCamera] = useState(false);
+  
+  // Inventory items state
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [isLoadingInventory, setIsLoadingInventory] = useState(false);
+  
+  // Stream URL for bidders
+  const [streamUrl, setStreamUrl] = useState<string | null>(null);
+  const [isStreamActive, setIsStreamActive] = useState(false);
+  const bidderVideoRef = useRef<HTMLVideoElement>(null);
+  
+  // WebRTC state
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map()); // For admin: track connections per bidder
+  const signalingChannelRef = useRef<any>(null);
+  const [webrtcConnected, setWebrtcConnected] = useState(false);
+  
+  // MediaRecorder for chunk-based streaming (fallback/simple approach)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
 
   const isBidder = profile?.role === 'bidder';
   const isStaffOrAdmin = profile?.role && ['staff', 'admin', 'super-admin', 'auction-manager'].includes(profile.role);
@@ -37,7 +65,8 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
       }
 
       try {
-        const { data, error } = await supabase
+        // Primary check: auction_entrance_fees table
+        const { data: feeData, error: feeError } = await supabase
           .from('auction_entrance_fees')
           .select('payment_status, access_expires_at')
           .eq('auction_id', auctionId)
@@ -45,16 +74,30 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
           .eq('payment_status', 'paid')
           .maybeSingle();
 
-        if (error) {
-          console.error('Error checking access:', error);
-          setHasAccess(false);
-        } else if (data) {
+        if (!feeError && feeData) {
           const now = new Date();
-          const expiresAt = new Date(data.access_expires_at);
+          const expiresAt = new Date(feeData.access_expires_at);
           setHasAccess(now < expiresAt);
-        } else {
-          setHasAccess(false);
+          setIsCheckingAccess(false);
+          return;
         }
+
+        // Fallback check: entrance_fee_receipts table (in case fee record insert failed)
+        const { data: receiptData, error: receiptError } = await supabase
+          .from('entrance_fee_receipts')
+          .select('status')
+          .eq('auction_id', auctionId)
+          .eq('bidder_id', user.id)
+          .eq('status', 'approved')
+          .maybeSingle();
+
+        if (!receiptError && receiptData) {
+          setHasAccess(true);
+          setIsCheckingAccess(false);
+          return;
+        }
+
+        setHasAccess(false);
       } catch (error) {
         console.error('Error checking access:', error);
         setHasAccess(false);
@@ -71,6 +114,938 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
     const openLot = lots.find(lot => lot.status === 'OPEN');
     setCurrentLot(openLot || lots[0] || null);
   }, [lots]);
+
+  // Cleanup camera on unmount — only releases hardware, does NOT end the auction
+  useEffect(() => {
+    return () => {
+      releaseCamera();
+    };
+  }, []);
+
+  // Fetch inventory items
+  useEffect(() => {
+    if (isStaffOrAdmin) {
+      fetchInventoryItems();
+    }
+  }, [isStaffOrAdmin, auctionId]);
+
+  // Set up WebRTC signaling for bidders
+  useEffect(() => {
+    if (isBidder) {
+      setupBidderWebRTC();
+      
+      // Debug: Check connection state periodically
+      const debugInterval = setInterval(() => {
+        if (peerConnectionRef.current) {
+          const pc = peerConnectionRef.current;
+          console.log('[WebRTC Bidder] Debug - Connection state:', {
+            connectionState: pc.connectionState,
+            signalingState: pc.signalingState,
+            iceConnectionState: pc.iceConnectionState,
+            iceGatheringState: pc.iceGatheringState,
+            hasRemoteDescription: !!pc.remoteDescription,
+            hasLocalDescription: !!pc.localDescription,
+            videoSrcObject: !!bidderVideoRef.current?.srcObject
+          });
+        }
+      }, 5000);
+      
+      return () => {
+        clearInterval(debugInterval);
+        cleanupWebRTC();
+      };
+    }
+  }, [isBidder, auctionId]);
+
+  // Set up WebRTC signaling for admin when stream starts
+  useEffect(() => {
+    if (isStaffOrAdmin && !isBidder && isStreaming && streamRef.current) {
+      // Small delay to ensure stream is fully ready
+      const timer = setTimeout(() => {
+        setupAdminWebRTC();
+      }, 500);
+      
+      return () => {
+        clearTimeout(timer);
+        cleanupWebRTC();
+      };
+    } else if (isStaffOrAdmin && !isBidder && !isStreaming) {
+      cleanupWebRTC();
+    }
+  }, [isStaffOrAdmin, isBidder, isStreaming, auctionId]);
+
+  const setupAdminWebRTC = async () => {
+    if (!streamRef.current) return;
+
+    try {
+      console.log('[WebRTC Admin] Setting up WebRTC broadcasting');
+      
+      // Set up signaling channel first
+      setupSignalingChannel('admin');
+      
+      // Wait for channel to be ready, then create and broadcast offer
+      setTimeout(() => {
+        createAndBroadcastOffer();
+      }, 1500);
+
+    } catch (error) {
+      console.error('[WebRTC Admin] Error setting up:', error);
+    }
+  };
+
+  const createPeerConnectionForBidder = async (bidderId: string) => {
+    if (!streamRef.current) return null;
+
+    const configuration: RTCConfiguration = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    };
+
+    const pc = new RTCPeerConnection(configuration);
+
+    // Add local stream tracks
+    streamRef.current.getTracks().forEach(track => {
+      pc.addTrack(track, streamRef.current!);
+      console.log(`[WebRTC Admin] Added track to connection for ${bidderId}:`, track.kind);
+    });
+
+          // Handle ICE candidates - include bidderId so we know which connection this is for
+          pc.onicecandidate = (event) => {
+            if (event.candidate) {
+              console.log(`[WebRTC Admin] Sending ICE candidate for ${bidderId}`);
+              // Send candidate properties with bidderId
+              sendSignalingMessage('ice-candidate', { ...event.candidate.toJSON(), bidderId });
+            } else {
+              console.log(`[WebRTC Admin] All ICE candidates sent for ${bidderId}`);
+            }
+          };
+
+    // Handle connection state
+    pc.onconnectionstatechange = () => {
+      console.log(`[WebRTC Admin] Connection state for ${bidderId}:`, pc.connectionState);
+      const hasConnected = Array.from(peerConnectionsRef.current.values())
+        .some(pc => pc.connectionState === 'connected');
+      setWebrtcConnected(hasConnected);
+      
+      if (pc.connectionState === 'closed' || pc.connectionState === 'failed') {
+        peerConnectionsRef.current.delete(bidderId);
+      }
+    };
+
+    return pc;
+  };
+
+  const createAndBroadcastOffer = async () => {
+    if (!streamRef.current) return;
+
+    try {
+      console.log('[WebRTC Admin] Broadcasting offer to all bidders');
+      
+      // Create a single connection that will be used for the first bidder
+      // For multiple bidders, we'll create additional connections as needed
+      const configuration: RTCConfiguration = {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' }
+        ]
+      };
+
+      const pc = new RTCPeerConnection(configuration);
+      
+      // Add local stream tracks
+      streamRef.current.getTracks().forEach(track => {
+        pc.addTrack(track, streamRef.current!);
+        console.log('[WebRTC Admin] Added track:', track.kind);
+      });
+
+      // Handle ICE candidates
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          console.log('[WebRTC Admin] Broadcasting ICE candidate');
+          // Send candidate properties, not the object itself
+          sendSignalingMessage('ice-candidate', event.candidate.toJSON());
+        } else {
+          console.log('[WebRTC Admin] All ICE candidates sent');
+        }
+      };
+
+      // Handle connection state
+      pc.onconnectionstatechange = () => {
+        console.log('[WebRTC Admin] Connection state:', pc.connectionState);
+        const hasConnected = Array.from(peerConnectionsRef.current.values())
+          .some(pc => pc.connectionState === 'connected');
+        setWebrtcConnected(hasConnected);
+      };
+
+      // Create offer
+      const offer = await pc.createOffer({
+        offerToReceiveAudio: false,
+        offerToReceiveVideo: false
+      });
+      await pc.setLocalDescription(offer);
+      
+      // Store as the broadcast connection (for first bidder)
+      peerConnectionRef.current = pc;
+
+      // Broadcast offer to all bidders
+      sendSignalingMessage('offer', offer);
+      console.log('[WebRTC Admin] Broadcast offer sent');
+
+    } catch (error) {
+      console.error('[WebRTC Admin] Error creating offer:', error);
+    }
+  };
+
+  const setupBidderWebRTC = async () => {
+    try {
+      console.log('[WebRTC Bidder] Setting up to receive stream');
+      
+      // Set up signaling channel first to listen for offers
+      setupSignalingChannel('bidder');
+      
+      // Peer connection will be created when we receive an offer
+      // This is handled in handleSignalingMessage
+
+    } catch (error) {
+      console.error('[WebRTC Bidder] Error setting up:', error);
+    }
+  };
+
+  const createBidderPeerConnection = async () => {
+    // Close existing connection if any
+    if (peerConnectionRef.current) {
+      console.log('[WebRTC Bidder] Closing existing connection');
+      peerConnectionRef.current.close();
+    }
+    
+    // Create peer connection
+    const configuration: RTCConfiguration = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    };
+
+    const pc = new RTCPeerConnection(configuration);
+    peerConnectionRef.current = pc;
+    
+    console.log('[WebRTC Bidder] Created new peer connection');
+
+    // Handle incoming stream
+    pc.ontrack = (event) => {
+      console.log('[WebRTC Bidder] ontrack event fired!', {
+        streams: event.streams.length,
+        trackKind: event.track.kind,
+        trackId: event.track.id,
+        trackReadyState: event.track.readyState
+      });
+      
+      if (event.streams && event.streams.length > 0) {
+        const stream = event.streams[0];
+        console.log('[WebRTC Bidder] Stream has', stream.getTracks().length, 'tracks');
+        stream.getTracks().forEach(track => {
+          console.log('[WebRTC Bidder] Track:', track.kind, track.id, track.readyState);
+        });
+        
+        if (bidderVideoRef.current) {
+          console.log('[WebRTC Bidder] Assigning stream to video element');
+          bidderVideoRef.current.srcObject = stream;
+          setIsStreamActive(true);
+          setWebrtcConnected(true);
+          
+          // Try to play the video
+          bidderVideoRef.current.play()
+            .then(() => {
+              console.log('[WebRTC Bidder] Video play() succeeded');
+            })
+            .catch(err => {
+              console.error('[WebRTC Bidder] Error playing video:', err);
+            });
+        } else {
+          console.warn('[WebRTC Bidder] Video ref is null!');
+        }
+      } else {
+        console.warn('[WebRTC Bidder] No streams in event, trying event.track');
+        // Fallback: try to get stream from track
+        if (event.track && bidderVideoRef.current) {
+          const stream = new MediaStream([event.track]);
+          bidderVideoRef.current.srcObject = stream;
+          setIsStreamActive(true);
+          setWebrtcConnected(true);
+          console.log('[WebRTC Bidder] Created stream from track');
+        }
+      }
+    };
+
+    // Handle ICE candidates
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        console.log('[WebRTC Bidder] Sending ICE candidate');
+        // Send candidate properties, not the object itself
+        sendSignalingMessage('ice-candidate', event.candidate.toJSON());
+      } else {
+        console.log('[WebRTC Bidder] All ICE candidates sent');
+      }
+    };
+
+    // Handle connection state
+    pc.onconnectionstatechange = () => {
+      console.log('[WebRTC Bidder] Connection state changed:', {
+        state: pc.connectionState,
+        signalingState: pc.signalingState,
+        iceConnectionState: pc.iceConnectionState,
+        iceGatheringState: pc.iceGatheringState
+      });
+      
+      setWebrtcConnected(pc.connectionState === 'connected');
+      
+      if (pc.connectionState === 'connected') {
+        console.log('[WebRTC Bidder] Connection established!');
+        setIsStreamActive(true);
+      } else if (pc.connectionState === 'failed') {
+        console.error('[WebRTC Bidder] Connection failed!');
+        setIsStreamActive(false);
+        // Try to reconnect
+        setTimeout(() => {
+          if (signalingChannelRef.current) {
+            console.log('[WebRTC Bidder] Attempting to reconnect...');
+            setupBidderWebRTC();
+          }
+        }, 3000);
+      } else if (pc.connectionState === 'disconnected') {
+        console.warn('[WebRTC Bidder] Connection disconnected');
+        setIsStreamActive(false);
+      }
+    };
+    
+    // Also monitor ICE connection state
+    pc.oniceconnectionstatechange = () => {
+      console.log('[WebRTC Bidder] ICE connection state:', pc.iceConnectionState);
+      if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+        console.log('[WebRTC Bidder] ICE connection established!');
+      } else if (pc.iceConnectionState === 'failed') {
+        console.error('[WebRTC Bidder] ICE connection failed!');
+      }
+    };
+
+    return pc;
+  };
+
+  const setupSignalingChannel = (role: 'admin' | 'bidder') => {
+    // Clean up existing channel first
+    if (signalingChannelRef.current) {
+      supabase.removeChannel(signalingChannelRef.current);
+    }
+
+    const channelName = `webrtc-signaling-${auctionId}`;
+    
+    const channel = supabase
+      .channel(channelName, {
+        config: {
+          broadcast: { self: false } // Don't receive own messages
+        }
+      })
+      .on('broadcast', { event: 'webrtc-signal' }, (payload) => {
+        console.log(`[WebRTC ${role}] Received signal:`, payload.payload.type);
+        handleSignalingMessage(payload.payload, role);
+      })
+      .subscribe((status) => {
+        console.log(`[WebRTC ${role}] Channel subscription status:`, status);
+        if (status === 'SUBSCRIBED') {
+          console.log(`[WebRTC ${role}] Successfully subscribed to channel`);
+        }
+      });
+
+    signalingChannelRef.current = channel;
+    console.log(`[WebRTC ${role}] Signaling channel set up:`, channelName);
+  };
+
+  const sendSignalingMessage = (type: string, data: any) => {
+    if (!signalingChannelRef.current) {
+      console.warn('[WebRTC] Signaling channel not ready');
+      return;
+    }
+
+    try {
+      // For ICE candidates, ensure we're sending the JSON representation
+      let serializedData = data;
+      if (type === 'ice-candidate' && data && typeof data === 'object') {
+        // If it's already a toJSON() result, use it; otherwise convert
+        if (data.candidate && typeof data.candidate === 'string') {
+          serializedData = data; // Already in correct format
+        } else {
+          // Try to get JSON representation
+          serializedData = JSON.parse(JSON.stringify(data));
+        }
+      } else {
+        serializedData = JSON.parse(JSON.stringify(data)); // Ensure serializable
+      }
+      
+      signalingChannelRef.current.send({
+        type: 'broadcast',
+        event: 'webrtc-signal',
+        payload: {
+          type,
+          data: serializedData,
+          from: user?.id,
+          auctionId
+        }
+      });
+      console.log(`[WebRTC] Sent ${type} message`, type === 'ice-candidate' ? { candidate: serializedData.candidate?.substring(0, 50) } : '');
+    } catch (error) {
+      console.error('[WebRTC] Error sending signal:', error);
+    }
+  };
+
+  const handleSignalingMessage = async (message: any, role: 'admin' | 'bidder') => {
+    if (message.auctionId !== auctionId) {
+      console.log('[WebRTC] Ignoring message for different auction');
+      return;
+    }
+    
+    if (message.from === user?.id) {
+      console.log('[WebRTC] Ignoring own message');
+      return; // Ignore own messages
+    }
+
+    try {
+      if (role === 'bidder' && message.type === 'offer') {
+        console.log('[WebRTC Bidder] Received offer');
+        
+        // Create peer connection if it doesn't exist, or reuse existing one
+        if (!peerConnectionRef.current) {
+          console.log('[WebRTC Bidder] Creating new peer connection');
+          await createBidderPeerConnection();
+        }
+        
+        const pc = peerConnectionRef.current;
+        if (!pc) {
+          console.error('[WebRTC Bidder] Failed to create peer connection');
+          return;
+        }
+
+        try {
+          // Check if we already have a remote description
+          if (pc.remoteDescription) {
+            console.log('[WebRTC Bidder] Already have remote description, creating new connection');
+            // Create a new connection for this offer
+            await createBidderPeerConnection();
+            const newPc = peerConnectionRef.current;
+            if (!newPc) return;
+            
+            await newPc.setRemoteDescription(new RTCSessionDescription(message.data));
+            const answer = await newPc.createAnswer();
+            await newPc.setLocalDescription(answer);
+            sendSignalingMessage('answer', answer);
+          } else {
+            console.log('[WebRTC Bidder] Setting remote description');
+            await pc.setRemoteDescription(new RTCSessionDescription(message.data));
+            
+            console.log('[WebRTC Bidder] Creating answer');
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            console.log('[WebRTC Bidder] Created answer, sending to admin');
+            
+            sendSignalingMessage('answer', answer);
+          }
+        } catch (error) {
+          console.error('[WebRTC Bidder] Error handling offer:', error);
+        }
+      } else if (role === 'admin' && message.type === 'answer') {
+        console.log('[WebRTC Admin] Received answer from bidder');
+        const bidderId = message.from || 'unknown';
+        
+        // Find the connection that sent the offer this answer is for
+        // For the first bidder, use the broadcast connection
+        let pc: RTCPeerConnection | null = null;
+        
+        if (peerConnectionRef.current && peerConnectionsRef.current.size === 0) {
+          // First bidder - use the broadcast connection
+          console.log(`[WebRTC Admin] First bidder ${bidderId}, using broadcast connection`);
+          pc = peerConnectionRef.current;
+          peerConnectionsRef.current.set(bidderId, pc);
+        } else if (peerConnectionsRef.current.has(bidderId)) {
+          // Existing connection for this bidder
+          pc = peerConnectionsRef.current.get(bidderId) || null;
+          console.log(`[WebRTC Admin] Using existing connection for ${bidderId}`);
+        } else {
+          // This shouldn't happen - answer without a connection
+          console.error(`[WebRTC Admin] Received answer from ${bidderId} but no connection exists!`);
+          // Create a connection and send a new offer
+          pc = await createPeerConnectionForBidder(bidderId);
+          if (!pc) {
+            console.error('[WebRTC Admin] Failed to create peer connection');
+            return;
+          }
+          peerConnectionsRef.current.set(bidderId, pc);
+          
+          // Create and send offer
+          try {
+            const offer = await pc.createOffer({
+              offerToReceiveAudio: false,
+              offerToReceiveVideo: false
+            });
+            await pc.setLocalDescription(offer);
+            console.log(`[WebRTC Admin] Created new offer for ${bidderId}, sending...`);
+            sendSignalingMessage('offer', offer);
+            return; // Wait for their answer to this new offer
+          } catch (error) {
+            console.error(`[WebRTC Admin] Error creating offer:`, error);
+            return;
+          }
+        }
+        
+        if (!pc) {
+          console.error('[WebRTC Admin] No peer connection available');
+          return;
+        }
+        
+        // Set the answer on the connection
+        try {
+          console.log(`[WebRTC Admin] Setting answer for ${bidderId}, current signaling state: ${pc.signalingState}`);
+          if (pc.signalingState === 'have-local-offer') {
+            await pc.setRemoteDescription(new RTCSessionDescription(message.data));
+            console.log(`[WebRTC Admin] Successfully set remote description (answer) for ${bidderId}`);
+            console.log(`[WebRTC Admin] New signaling state: ${pc.signalingState}`);
+          } else {
+            console.warn(`[WebRTC Admin] Cannot set answer - unexpected signaling state: ${pc.signalingState}`);
+            // Try to set it anyway
+            try {
+              await pc.setRemoteDescription(new RTCSessionDescription(message.data));
+              console.log(`[WebRTC Admin] Set answer despite unexpected state`);
+            } catch (err) {
+              console.error(`[WebRTC Admin] Failed to set answer:`, err);
+            }
+          }
+        } catch (error) {
+          console.error(`[WebRTC Admin] Error setting remote description:`, error);
+        }
+      } else if (message.type === 'ice-candidate') {
+        console.log('[WebRTC] Received ICE candidate');
+        
+        // Get the appropriate peer connection
+        let targetPc: RTCPeerConnection | null = null;
+        if (role === 'bidder') {
+          targetPc = peerConnectionRef.current;
+        } else if (role === 'admin') {
+          const bidderId = message.data?.bidderId || message.from;
+          targetPc = peerConnectionsRef.current.get(bidderId) || peerConnectionRef.current;
+        }
+        
+        if (!targetPc) {
+          console.warn('[WebRTC] No peer connection available for ICE candidate');
+          return;
+        }
+        
+        // Extract candidate data - message.data should be the candidate properties from toJSON()
+        let candidateData = message.data;
+        
+        console.log('[WebRTC] Raw candidate data received:', candidateData, typeof candidateData);
+        
+        // Remove bidderId if present (it's metadata, not part of candidate)
+        if (candidateData && typeof candidateData === 'object' && 'bidderId' in candidateData) {
+          const { bidderId, ...candidateProps } = candidateData;
+          candidateData = candidateProps;
+        }
+        
+        // Validate candidate data structure
+        if (candidateData && typeof candidateData === 'object') {
+          // RTCIceCandidateInit requires: candidate (string), sdpMLineIndex (number), sdpMid (string | null)
+          if (candidateData.candidate && typeof candidateData.candidate === 'string') {
+            try {
+              // Ensure we have the required fields with defaults
+              // sdpMLineIndex must be a number (0 or higher), not null
+              const candidateInit: RTCIceCandidateInit = {
+                candidate: candidateData.candidate,
+                sdpMLineIndex: candidateData.sdpMLineIndex !== undefined && candidateData.sdpMLineIndex !== null 
+                  ? candidateData.sdpMLineIndex 
+                  : 0,
+                sdpMid: candidateData.sdpMid ?? null,
+                usernameFragment: candidateData.usernameFragment ?? undefined
+              };
+              
+              console.log('[WebRTC] Creating ICE candidate with:', candidateInit);
+              const candidate = new RTCIceCandidate(candidateInit);
+              await targetPc.addIceCandidate(candidate);
+              console.log('[WebRTC] Successfully added ICE candidate');
+            } catch (error) {
+              console.error('[WebRTC] Error adding ICE candidate:', error);
+              console.error('[WebRTC] Candidate data received:', candidateData);
+            }
+          } else {
+            console.warn('[WebRTC] Invalid ICE candidate data - missing or invalid candidate string:', candidateData);
+          }
+        } else {
+          console.warn('[WebRTC] Invalid ICE candidate data - not an object:', candidateData, typeof candidateData);
+        }
+      }
+    } catch (error) {
+      console.error(`[WebRTC ${role}] Error handling signal:`, error);
+    }
+  };
+
+  const cleanupWebRTC = () => {
+    // Close all peer connections
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+      peerConnectionRef.current = null;
+    }
+    peerConnectionsRef.current.forEach((pc, bidderId) => {
+      console.log(`[WebRTC] Closing connection for bidder: ${bidderId}`);
+      pc.close();
+    });
+    peerConnectionsRef.current.clear();
+    
+    // Stop media recorder if active
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
+    }
+    
+    // Remove signaling channel
+    if (signalingChannelRef.current) {
+      supabase.removeChannel(signalingChannelRef.current);
+      signalingChannelRef.current = null;
+    }
+    
+    setWebrtcConnected(false);
+  };
+
+  const startCamera = async () => {
+    try {
+      setCameraError(null);
+      setIsLoadingCamera(true);
+
+      // Check if getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setIsLoadingCamera(false);
+        throw new Error('getUserMedia is not supported in this browser. Please use a modern browser like Chrome, Firefox, or Edge.');
+      }
+
+      // Check if we're on HTTPS (required for camera access in most browsers)
+      if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        setIsLoadingCamera(false);
+        throw new Error('Camera access requires HTTPS. Please access the site via HTTPS.');
+      }
+
+      // Start with the simplest constraints possible to avoid OverconstrainedError
+      let stream: MediaStream | null = null;
+      
+      // Try progressively simpler constraints - start with the simplest first
+      const constraintAttempts = [
+        // Attempt 1: Simplest possible (most compatible)
+        { video: true, audio: true },
+        // Attempt 2: Just video, no audio
+        { video: true, audio: false },
+        // Attempt 3: Basic facingMode (if supported)
+        { video: { facingMode: 'user' }, audio: true },
+        // Attempt 4: FacingMode with ideal (fallback)
+        { video: { facingMode: { ideal: 'user' } }, audio: true },
+      ];
+
+      let lastError: any = null;
+      
+      for (let i = 0; i < constraintAttempts.length; i++) {
+        const constraints = constraintAttempts[i];
+        try {
+          console.log(`[Camera] Attempt ${i + 1}/${constraintAttempts.length} with constraints:`, constraints);
+          
+          // Add timeout to prevent hanging
+          const getUserMediaPromise = navigator.mediaDevices.getUserMedia(constraints);
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error('Camera access timeout')), 5000);
+          });
+          
+          stream = await Promise.race([getUserMediaPromise, timeoutPromise]);
+          console.log('[Camera] Access successful!');
+          break; // Success, exit loop
+        } catch (error: any) {
+          console.warn(`[Camera] Attempt ${i + 1} failed:`, error.name, error.message);
+          lastError = error;
+          
+          // If it's not an OverconstrainedError, don't try other constraints
+          if (error.name !== 'OverconstrainedError' && 
+              error.name !== 'ConstraintNotSatisfiedError' &&
+              error.message !== 'Camera access timeout') {
+            setIsLoadingCamera(false);
+            throw error; // Re-throw non-constraint errors immediately
+          }
+          // Continue to next constraint attempt
+        }
+      }
+
+      if (!stream) {
+        setIsLoadingCamera(false);
+        throw lastError || new Error('Could not access camera with any available constraints.');
+      }
+
+      streamRef.current = stream;
+      
+      // Wait a tiny bit to ensure video element is rendered (React needs a moment)
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Try to get video element, with retries
+      let videoElement = videoRef.current;
+      let retries = 0;
+      while (!videoElement && retries < 5) {
+        console.log(`[Camera] Video ref not ready, retry ${retries + 1}/5`);
+        await new Promise(resolve => setTimeout(resolve, 100));
+        videoElement = videoRef.current;
+        retries++;
+      }
+      
+      if (!videoElement) {
+        console.error('[Camera] Video ref is still null after retries!');
+        setIsLoadingCamera(false);
+        setCameraError('Video element not found. Please refresh the page.');
+        return;
+      }
+
+      console.log('[Camera] Video element found, setting stream');
+      
+      // Set video properties BEFORE setting srcObject
+      videoElement.autoplay = true;
+      videoElement.playsInline = true;
+      videoElement.muted = true;
+      
+      // Set the stream
+      videoElement.srcObject = stream;
+      
+      // Update state immediately - don't wait for events
+      setIsStreaming(true);
+      setIsLoadingCamera(false);
+      console.log('[Camera] Stream assigned and state updated');
+      
+      // Update stream status in database to notify bidders
+      try {
+        const { error: updateError } = await supabase
+          .from('auction_streams')
+          .update({ 
+            is_active: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('auction_id', auctionId);
+
+        if (updateError) {
+          console.warn('[Camera] Failed to update stream status:', updateError);
+        } else {
+          console.log('[Camera] Stream status updated in database - bidders will see stream is active');
+        }
+      } catch (dbError) {
+        console.warn('[Camera] Error updating stream status:', dbError);
+      }
+      
+      // Try to play immediately
+      videoElement.play().then(() => {
+        console.log('[Camera] Video play() succeeded');
+      }).catch((playError) => {
+        console.warn('[Camera] Video play() error (non-fatal):', playError);
+      });
+
+      // Set up event listeners for debugging (but don't block on them)
+      const onLoaded = () => {
+        console.log('[Camera] Video metadata/loaded event fired');
+        videoElement.play().catch(err => console.warn('[Camera] Play error:', err));
+      };
+
+      videoElement.addEventListener('loadedmetadata', onLoaded, { once: true });
+      videoElement.addEventListener('canplay', onLoaded, { once: true });
+      videoElement.addEventListener('loadeddata', () => {
+        console.log('[Camera] Video data loaded');
+      }, { once: true });
+      
+      // Check if already ready
+      if (videoElement.readyState >= 2) {
+        console.log('[Camera] Video already ready, state:', videoElement.readyState);
+      }
+    } catch (error: any) {
+      console.error('Error accessing camera:', error);
+      setIsLoadingCamera(false);
+      setIsStreaming(false);
+      
+      let errorMessage = 'Failed to access camera. ';
+      
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        errorMessage = 'Camera permission denied. Please allow camera access in your browser settings and refresh the page.';
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        errorMessage = 'No camera found. Please connect a camera device.';
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        errorMessage = 'Camera is already in use by another application. Please close other apps using the camera.';
+      } else if (error.name === 'OverconstrainedError' || error.name === 'ConstraintNotSatisfiedError') {
+        errorMessage = 'Camera does not support the requested settings. Please try a different camera or check your camera settings.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      } else {
+        errorMessage += 'Please check your camera permissions and try again.';
+      }
+      
+      setCameraError(errorMessage);
+      toast({
+        title: 'Camera Error',
+        description: errorMessage,
+        variant: 'destructive',
+        duration: 5000,
+      });
+    }
+  };
+
+  // Release camera and WebRTC without ending the auction
+  // This is safe to call on unmount/refresh — the auction stays LIVE
+  const releaseCamera = () => {
+    cleanupWebRTC();
+    
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsStreaming(false);
+  };
+
+  // Stop camera stream only (auction stays live, admin can restart stream)
+  const stopCamera = () => {
+    releaseCamera();
+    toast({
+      title: 'Stream Paused',
+      description: 'Camera stopped. The auction is still live — click "Start Stream" to resume.',
+    });
+  };
+
+  // End the auction entirely — sets status to completed (admin must explicitly choose this)
+  const endAuction = async () => {
+    try {
+      releaseCamera();
+
+      // Update auction status to completed
+      const { error: auctionError } = await supabase
+        .from('auction_events')
+        .update({ 
+          status: 'completed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', auctionId);
+
+      if (auctionError) {
+        console.error('[Auction] Failed to update auction status:', auctionError);
+        toast({
+          title: 'Error',
+          description: 'Failed to end auction',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Update stream status in database
+      const { error: updateError } = await supabase
+        .from('auction_streams')
+        .update({ 
+          is_active: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('auction_id', auctionId);
+
+      if (updateError) {
+        console.warn('[Auction] Failed to update stream status:', updateError);
+      }
+
+      toast({
+        title: 'Auction Ended',
+        description: 'The auction has been ended and marked as completed.',
+      });
+    } catch (dbError) {
+      console.error('[Auction] Error ending auction:', dbError);
+      toast({
+        title: 'Error',
+        description: 'Failed to end auction',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const fetchInventoryItems = async () => {
+    setIsLoadingInventory(true);
+    try {
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .select('*')
+        .eq('status', 'pending_auction')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setInventoryItems(data as unknown as InventoryItem[]);
+    } catch (error: any) {
+      console.error('Error fetching inventory:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load inventory items',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingInventory(false);
+    }
+  };
+
+  const convertInventoryToLot = async (inventoryItem: InventoryItem) => {
+    try {
+      // Get the next lot number
+      const { data: existingLots } = await supabase
+        .from('auction_lots')
+        .select('lot_number')
+        .eq('auction_id', auctionId)
+        .order('lot_number', { ascending: false })
+        .limit(1);
+
+      const nextLotNumber = existingLots && existingLots.length > 0 
+        ? existingLots[0].lot_number + 1 
+        : 1;
+
+      // Create auction lot from inventory item
+      const { data: newLot, error: lotError } = await supabase
+        .from('auction_lots')
+        .insert({
+          auction_id: auctionId,
+          lot_number: nextLotNumber,
+          title: inventoryItem.name || `Item ${inventoryItem.id}`,
+          description: `Category: ${inventoryItem.category_name || 'N/A'}, Condition: ${inventoryItem.condition}`,
+          starting_price: inventoryItem.starting_bid_price,
+          current_price: inventoryItem.starting_bid_price,
+          status: 'PENDING',
+        })
+        .select()
+        .single();
+
+      if (lotError) throw lotError;
+
+      // Update inventory item status
+      const { error: updateError } = await supabase
+        .from('inventory_items')
+        .update({ status: 'pending_auction' }) // Keep as pending_auction until sold
+        .eq('id', inventoryItem.id);
+
+      if (updateError) {
+        console.warn('Failed to update inventory status:', updateError);
+      }
+
+      toast({
+        title: 'Success',
+        description: `Item "${inventoryItem.name || inventoryItem.id}" added as Lot #${nextLotNumber}`,
+      });
+
+      // Refresh inventory list
+      fetchInventoryItems();
+    } catch (error: any) {
+      console.error('Error converting inventory to lot:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to add item to auction',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handleBidSuccess = (response: BidResponse) => {
     console.log('Bid placed successfully:', response);
@@ -136,30 +1111,121 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
           {/* Video Section */}
           <Card>
             <CardContent className="p-0">
-              <div className="aspect-video bg-black rounded-lg flex items-center justify-center text-white relative">
+              <div className="aspect-video bg-black rounded-lg flex items-center justify-center text-white relative overflow-hidden">
                 {isBidder ? (
-                  // Bidder View - Viewing Only
-                  <div className="text-center">
-                    <Eye className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm opacity-75">Live Stream</p>
-                    <p className="text-xs opacity-50">Video feed for viewing only</p>
-                  </div>
-                ) : (
-                  // Company Account View - Host/Auctioneer Controls
+                  // Bidder View - Display Live Stream via WebRTC
                   <>
-                    <div className="text-center">
-                      <Video className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm opacity-75">Auctioneer View</p>
-                      <p className="text-xs opacity-50">Host controls active</p>
-                    </div>
+                    {/* Always render video element for WebRTC stream */}
+                    <video
+                      ref={bidderVideoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover"
+                      onLoadedMetadata={() => {
+                        console.log('[WebRTC Bidder] Video metadata loaded');
+                        if (bidderVideoRef.current) {
+                          bidderVideoRef.current.play().catch(err => {
+                            console.error('[WebRTC Bidder] Auto-play error:', err);
+                          });
+                        }
+                      }}
+                      onCanPlay={() => {
+                        console.log('[WebRTC Bidder] Video can play');
+                        setIsStreamActive(true);
+                      }}
+                      onError={(e) => {
+                        console.error('[WebRTC Bidder] Video error:', e);
+                      }}
+                    />
+                    
+                    {isStreamActive && bidderVideoRef.current?.srcObject ? (
+                      <>
+                        <div className="absolute top-4 left-4">
+                          <Badge className="bg-red-600 text-white border-0 px-3 py-1 text-sm font-semibold animate-pulse">
+                            ● LIVE
+                          </Badge>
+                        </div>
+                      </>
+                    ) : webrtcConnected ? (
+                      <div className="absolute inset-0 flex items-center justify-center text-white bg-black/50">
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+                          <p className="text-sm opacity-75">Connecting to stream...</p>
+                          <p className="text-xs opacity-50 mt-2">Establishing connection...</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center text-white bg-black/50">
+                        <div className="text-center">
+                          <Eye className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm opacity-75">Waiting for Stream</p>
+                          <p className="text-xs opacity-50">The auctioneer will start streaming soon</p>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  // Company Account View - Host/Auctioneer Controls with Camera
+                  <>
+                    {/* Always render video element so ref is available */}
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className={`w-full h-full object-cover ${isStreaming ? 'block' : 'hidden'}`}
+                    />
+                    
+                    {/* Overlay messages when not streaming or error */}
+                    {cameraError ? (
+                      <div className="absolute inset-0 flex items-center justify-center text-center p-8 text-white bg-black/50">
+                        <div>
+                          <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-75" />
+                          <p className="text-sm opacity-90 mb-2 font-medium">Camera Error</p>
+                          <p className="text-xs opacity-75 mb-4 px-4">{cameraError}</p>
+                          <div className="flex flex-col gap-2 items-center">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                              onClick={startCamera}
+                              disabled={isLoadingCamera}
+                            >
+                              <Camera className="h-4 w-4 mr-2" />
+                              {isLoadingCamera ? 'Retrying...' : 'Retry Camera'}
+                            </Button>
+                            <p className="text-xs opacity-60 mt-2">
+                              Tip: Check browser permissions and ensure no other app is using the camera
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : isLoadingCamera ? (
+                      <div className="absolute inset-0 flex items-center justify-center text-center text-white bg-black/50">
+                        <div>
+                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+                          <p className="text-sm opacity-75">Starting camera...</p>
+                          <p className="text-xs opacity-50 mt-2">Please allow camera access if prompted</p>
+                        </div>
+                      </div>
+                    ) : !isStreaming ? (
+                      <div className="absolute inset-0 flex items-center justify-center text-center text-white bg-black/50">
+                        <div>
+                          <Video className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm opacity-75">Camera Ready</p>
+                          <p className="text-xs opacity-50 mt-2">Click "Start Stream" to begin</p>
+                        </div>
+                      </div>
+                    ) : null}
                     
                     {/* Host Controls Overlay */}
                     <div className="absolute bottom-4 left-4 right-4">
                       <div className="bg-black/80 backdrop-blur-sm rounded-lg p-4">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                            <span className="text-sm font-medium">LIVE</span>
+                            <div className={`w-3 h-3 rounded-full ${isStreaming ? 'bg-red-500 animate-pulse' : 'bg-gray-500'}`}></div>
+                            <span className="text-sm font-medium">{isStreaming ? 'LIVE' : 'OFFLINE'}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm">
                             <Users className="h-4 w-4" />
@@ -168,22 +1234,70 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
                         </div>
                         
                         <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
-                            <Play className="h-4 w-4 mr-1" />
-                            Start
-                          </Button>
-                          <Button size="sm" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
-                            <Pause className="h-4 w-4 mr-1" />
-                            Pause
-                          </Button>
-                          <Button size="sm" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
-                            <SkipForward className="h-4 w-4 mr-1" />
-                            Next Lot
-                          </Button>
+                          {!isStreaming && !isLoadingCamera && (
+                            <Button 
+                              size="sm" 
+                              className="bg-primary hover:bg-primary/90 text-white"
+                              onClick={startCamera}
+                              disabled={isLoadingCamera}
+                            >
+                              <Camera className="h-4 w-4 mr-1" />
+                              {isLoadingCamera ? 'Starting...' : 'Start Stream'}
+                            </Button>
+                          )}
+                          {isLoadingCamera && (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="bg-white/10 border-white/20 text-white"
+                              disabled
+                            >
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
+                              Starting...
+                            </Button>
+                          )}
+                          {isStreaming && (
+                            <>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                                onClick={stopCamera}
+                              >
+                                <VideoOff className="h-4 w-4 mr-1" />
+                                Pause Stream
+                              </Button>
+                              {currentLot && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                                  onClick={() => {
+                                    // Open next lot logic
+                                    const currentIndex = lots.findIndex(l => l.id === currentLot.id);
+                                    const nextLot = lots[currentIndex + 1] || lots[0];
+                                    if (nextLot) setCurrentLot(nextLot);
+                                  }}
+                                >
+                                  <SkipForward className="h-4 w-4 mr-1" />
+                                  Next Lot
+                                </Button>
+                              )}
+                            </>
+                          )}
                           <div className="flex-1"></div>
-                          <Button size="sm" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
-                            <Mic className="h-4 w-4 mr-1" />
-                            Audio
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="bg-red-600/80 border-red-500 text-white hover:bg-red-700"
+                            onClick={() => {
+                              if (confirm('Are you sure you want to end this auction? This will mark it as completed and stop the stream for all bidders.')) {
+                                endAuction();
+                              }
+                            }}
+                          >
+                            <Square className="h-4 w-4 mr-1" />
+                            End Auction
                           </Button>
                           <Button size="sm" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
                             <Settings className="h-4 w-4" />
@@ -252,6 +1366,67 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
                     <p className="text-center text-muted-foreground py-4">No bids yet</p>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Inventory Items Section - Only for Admin */}
+          {isStaffOrAdmin && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Available Inventory Items
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingInventory ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+                    <p className="text-sm text-muted-foreground">Loading inventory...</p>
+                  </div>
+                ) : inventoryItems.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-4">No inventory items available</p>
+                ) : (
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {inventoryItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-3 rounded border hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-medium truncate">{item.name || item.id}</h4>
+                              <Badge variant="outline" className="text-xs">
+                                {item.category_name || 'Uncategorized'}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-muted-foreground space-y-1">
+                              <p>Condition: {item.condition.replace('_', ' ')}</p>
+                              <p>Starting Bid: ₱{item.starting_bid_price.toLocaleString()}</p>
+                              {item.photo_url && (
+                                <img 
+                                  src={item.photo_url} 
+                                  alt={item.name || item.id}
+                                  className="w-16 h-16 object-cover rounded mt-2"
+                                />
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => convertInventoryToLot(item)}
+                            className="shrink-0"
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add to Auction
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

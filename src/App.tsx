@@ -23,6 +23,7 @@ import BidderProfiles from "./pages/BidderProfiles";
 import Profile from "./pages/Profile";
 import MyBids from "./pages/MyBids";
 import Inventory from "./pages/Inventory";
+import Payments from "./pages/Payments";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +87,11 @@ const AppRoutes = () => {
         <Route path="/inventory" element={
           <ProtectedRoute allowedRoles={['staff', 'admin', 'super-admin'] as UserRole[]}>
             <Layout><Inventory /></Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/payments" element={
+          <ProtectedRoute allowedRoles={['admin', 'super-admin'] as UserRole[]}>
+            <Layout><Payments /></Layout>
           </ProtectedRoute>
         } />
       </Route>

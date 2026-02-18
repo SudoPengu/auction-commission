@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Users, Timer, PhilippinePeso } from 'lucide-react';
+import { Eye, Users, Timer, PhilippinePeso, Video } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import EntrancePayment from './EntrancePayment';
@@ -18,6 +18,7 @@ interface AuctionEvent {
   viewer_count?: number;
   total_bids?: number;
   revenue?: string;
+  entrance_fee?: number;
   duration?: string;
 }
 
@@ -40,7 +41,8 @@ const LiveAuctionHero: React.FC<LiveAuctionHeroProps> = ({ auction, onJoin }) =>
       }
 
       try {
-        const { data, error } = await supabase
+        // Primary check: auction_entrance_fees table
+        const { data: feeData, error: feeError } = await supabase
           .from('auction_entrance_fees')
           .select('payment_status, access_expires_at')
           .eq('auction_id', auction.id)
@@ -48,17 +50,31 @@ const LiveAuctionHero: React.FC<LiveAuctionHeroProps> = ({ auction, onJoin }) =>
           .eq('payment_status', 'paid')
           .maybeSingle();
 
-        if (error) {
-          console.error('Error checking access:', error);
-          setHasAccess(false);
-        } else if (data) {
-          // Check if access hasn't expired
+        if (!feeError && feeData) {
           const now = new Date();
-          const expiresAt = new Date(data.access_expires_at);
+          const expiresAt = new Date(feeData.access_expires_at);
           setHasAccess(now < expiresAt);
-        } else {
-          setHasAccess(false);
+          setIsCheckingAccess(false);
+          return;
         }
+
+        // Fallback check: entrance_fee_receipts table (in case fee record insert failed)
+        const { data: receiptData, error: receiptError } = await supabase
+          .from('entrance_fee_receipts')
+          .select('status')
+          .eq('auction_id', auction.id)
+          .eq('bidder_id', user.id)
+          .eq('status', 'approved')
+          .maybeSingle();
+
+        if (!receiptError && receiptData) {
+          // Receipt is approved — grant access even if fee record is missing
+          setHasAccess(true);
+          setIsCheckingAccess(false);
+          return;
+        }
+
+        setHasAccess(false);
       } catch (error) {
         console.error('Error checking access:', error);
         setHasAccess(false);
@@ -161,7 +177,7 @@ const LiveAuctionHero: React.FC<LiveAuctionHeroProps> = ({ auction, onJoin }) =>
                   auctionTitle={auction.title}
                   onPaymentSuccess={handlePaymentSuccess}
                   hasAccess={hasAccess}
-                  entranceFee={0}
+                  entranceFee={auction.entrance_fee || 0}
                 />
               )}
             </div>
@@ -177,7 +193,7 @@ const LiveAuctionHero: React.FC<LiveAuctionHeroProps> = ({ auction, onJoin }) =>
                   {isCheckingAccess 
                     ? 'Checking Access...' 
                     : hasAccess 
-                      ? 'Start Auction' 
+                      ? 'Join Live Auction' 
                       : 'Pay Entrance Fee First'
                   }
                 </Button>
@@ -187,7 +203,8 @@ const LiveAuctionHero: React.FC<LiveAuctionHeroProps> = ({ auction, onJoin }) =>
                   className="w-full text-lg py-6"
                   onClick={handleJoinAuction}
                 >
-                  Start Auction
+                  <Video className="h-5 w-5 mr-2" />
+                  Go to Stream
                 </Button>
               )}
             </div>

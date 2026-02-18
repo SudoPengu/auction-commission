@@ -510,6 +510,109 @@ export type Database = {
           },
         ]
       }
+      entrance_fee_receipts: {
+        Row: {
+          id: string
+          auction_id: string
+          bidder_id: string
+          payment_method: string
+          receipt_image_url: string
+          amount: number
+          reference_number: string | null
+          status: string
+          admin_notes: string | null
+          reviewed_by: string | null
+          reviewed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          auction_id: string
+          bidder_id: string
+          payment_method: string
+          receipt_image_url: string
+          amount: number
+          reference_number?: string | null
+          status?: string
+          admin_notes?: string | null
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          auction_id?: string
+          bidder_id?: string
+          payment_method?: string
+          receipt_image_url?: string
+          amount?: number
+          reference_number?: string | null
+          status?: string
+          admin_notes?: string | null
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entrance_fee_receipts_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auction_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entrance_fee_receipts_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auction_events_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entrance_fee_receipts_bidder_id_fkey"
+            columns: ["bidder_id"]
+            isOneToOne: false
+            referencedRelation: "bidders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_qr_codes: {
+        Row: {
+          id: string
+          payment_method: string
+          label: string | null
+          qr_image_url: string
+          is_active: boolean
+          uploaded_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          payment_method: string
+          label?: string | null
+          qr_image_url: string
+          is_active?: boolean
+          uploaded_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          payment_method?: string
+          label?: string | null
+          qr_image_url?: string
+          is_active?: boolean
+          uploaded_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number

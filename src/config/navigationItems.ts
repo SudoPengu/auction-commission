@@ -7,7 +7,8 @@ import {
   User,
   ShoppingCart,
   UserCircle,
-  Gavel
+  Gavel,
+  CreditCard
 } from 'lucide-react';
 import { NavItem } from '@/types/navigation';
 
@@ -35,6 +36,12 @@ export const navigationItems: NavItem[] = [
     icon: ShoppingCart,
     path: '/pos',
     roles: ['staff', 'admin', 'super-admin', 'auction-manager']
+  },
+  {
+    name: 'Payments',
+    icon: CreditCard,
+    path: '/payments',
+    roles: ['admin', 'super-admin']
   },
   {
     name: 'My Bids',

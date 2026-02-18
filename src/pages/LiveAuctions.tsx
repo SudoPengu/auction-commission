@@ -8,6 +8,7 @@ import { LiveAuctionCard, AuctionEvent } from '@/components/auction/LiveAuctionC
 import LiveAuctionHero from '@/components/auction/LiveAuctionHero';
 import LiveAuctionInterface from '@/components/auction/LiveAuctionInterface';
 import { AuctionCalendar } from '@/components/auction/AuctionCalendar';
+import { NewAuctionModal } from '@/components/auction/NewAuctionModal';
 import { toast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import BidderWelcomeBanner from '../components/bidder/BidderWelcomeBanner';
@@ -24,6 +25,7 @@ const LiveAuctions: React.FC = () => {
   const [auctionEvents, setAuctionEvents] = useState<AuctionEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedAuction, setSelectedAuction] = useState<AuctionEvent | null>(null);
+  const [isNewAuctionModalOpen, setIsNewAuctionModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchAuctions = async () => {
@@ -96,11 +98,44 @@ const LiveAuctions: React.FC = () => {
   const upcomingAuctions = auctionEvents.filter(a => a.status === 'UPCOMING');
   const recentlyEndedAuctions = auctionEvents.filter(a => a.status === 'COMPLETED').slice(0, 3);
 
-  const handleStartAuction = (id: string) => {
-    toast({
-      title: "Auction Started",
-      description: `Auction is now live!`,
-    });
+  const handleStartAuction = async (id: string) => {
+    try {
+      // Update auction status to live
+      const { error: auctionError } = await supabase
+        .from('auction_events')
+        .update({ status: 'live' })
+        .eq('id', id);
+
+      if (auctionError) throw auctionError;
+
+      // Activate the stream
+      const { error: streamError } = await supabase
+        .from('auction_streams')
+        .update({ is_active: true })
+        .eq('auction_id', id);
+
+      if (streamError) {
+        console.warn('Stream activation error:', streamError);
+        // Continue even if stream activation fails
+      }
+
+      // Find the auction and redirect to live interface
+      const auction = auctionEvents.find(a => a.id === id);
+      if (auction) {
+        setSelectedAuction(auction);
+        toast({
+          title: "Auction Started",
+          description: `Auction is now live! You can start streaming.`,
+        });
+      }
+    } catch (error: any) {
+      console.error('Error starting auction:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to start auction. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePauseAuction = (id: string) => {
@@ -110,12 +145,191 @@ const LiveAuctions: React.FC = () => {
     });
   };
 
-  const handleStopAuction = (id: string) => {
-    toast({
-      title: "Auction Stopped",
-      description: `Auction has been stopped and completed.`,
-      variant: "destructive"
-    });
+  const handleStopAuction = async (id: string) => {
+    try {
+      // Update auction status to completed
+      const { error: auctionError } = await supabase
+        .from('auction_events')
+        .update({ 
+          status: 'completed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (auctionError) throw auctionError;
+
+      // Update stream status
+      const { error: streamError } = await supabase
+        .from('auction_streams')
+        .update({ 
+          is_active: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('auction_id', id);
+
+      if (streamError) {
+        console.warn('Stream update error:', streamError);
+      }
+
+      // Refresh auctions list
+      const fetchAuctions = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('auction_events')
+            .select('*')
+            .order('start_date', { ascending: true });
+
+          if (error) {
+            console.error('Error fetching auctions:', error);
+            return;
+          }
+
+          const mappedAuctions: AuctionEvent[] = (data || []).map(auction => ({
+            id: auction.id,
+            title: auction.title || 'Untitled Auction',
+            theme_title: auction.theme_title || undefined,
+            date: new Date(auction.start_date).toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            }),
+            time: `${new Date(auction.start_date).toLocaleTimeString('en-US', { 
+              hour: 'numeric', 
+              minute: '2-digit',
+              hour12: true 
+            })} - ${new Date(auction.end_date).toLocaleTimeString('en-US', { 
+              hour: 'numeric', 
+              minute: '2-digit',
+              hour12: true 
+            })}`,
+            status: auction.status === 'live' ? 'LIVE' : 
+                   auction.status === 'upcoming' ? 'UPCOMING' : 'COMPLETED',
+            itemCount: 0,
+            viewer_count: auction.viewer_count || 0,
+            total_bids: auction.total_bids || 0,
+            revenue: auction.revenue?.toString() || '0',
+            entrance_fee: auction.entrance_fee ? Number(auction.entrance_fee) : 0,
+            platform: 'youtube',
+            duration: undefined
+          }));
+
+          setAuctionEvents(mappedAuctions);
+        } catch (error) {
+          console.error('Error fetching auctions:', error);
+        }
+      };
+      fetchAuctions();
+
+      toast({
+        title: "Auction Stopped",
+        description: `Auction has been stopped and completed.`,
+      });
+    } catch (error: any) {
+      console.error('Error stopping auction:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to stop auction. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteAuction = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this auction? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      // Delete associated stream first
+      const { error: streamError } = await supabase
+        .from('auction_streams')
+        .delete()
+        .eq('auction_id', id);
+
+      if (streamError) {
+        console.warn('Stream deletion error:', streamError);
+        // Continue with auction deletion even if stream deletion fails
+      }
+
+      // Delete auction lots
+      const { error: lotsError } = await supabase
+        .from('auction_lots')
+        .delete()
+        .eq('auction_id', id);
+
+      if (lotsError) {
+        console.warn('Lots deletion error:', lotsError);
+      }
+
+      // Delete auction event
+      const { error: auctionError } = await supabase
+        .from('auction_events')
+        .delete()
+        .eq('id', id);
+
+      if (auctionError) throw auctionError;
+
+      // Refresh auctions list
+      const fetchAuctions = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('auction_events')
+            .select('*')
+            .order('start_date', { ascending: true });
+
+          if (error) {
+            console.error('Error fetching auctions:', error);
+            return;
+          }
+
+          const mappedAuctions: AuctionEvent[] = (data || []).map(auction => ({
+            id: auction.id,
+            title: auction.title || 'Untitled Auction',
+            theme_title: auction.theme_title || undefined,
+            date: new Date(auction.start_date).toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            }),
+            time: `${new Date(auction.start_date).toLocaleTimeString('en-US', { 
+              hour: 'numeric', 
+              minute: '2-digit',
+              hour12: true 
+            })} - ${new Date(auction.end_date).toLocaleTimeString('en-US', { 
+              hour: 'numeric', 
+              minute: '2-digit',
+              hour12: true 
+            })}`,
+            status: auction.status === 'live' ? 'LIVE' : 
+                   auction.status === 'upcoming' ? 'UPCOMING' : 'COMPLETED',
+            itemCount: 0,
+            viewer_count: auction.viewer_count || 0,
+            total_bids: auction.total_bids || 0,
+            revenue: auction.revenue?.toString() || '0',
+            entrance_fee: auction.entrance_fee ? Number(auction.entrance_fee) : 0,
+            platform: 'youtube',
+            duration: undefined
+          }));
+
+          setAuctionEvents(mappedAuctions);
+        } catch (error) {
+          console.error('Error fetching auctions:', error);
+        }
+      };
+      fetchAuctions();
+
+      toast({
+        title: "Auction Deleted",
+        description: "The auction and its associated data have been deleted.",
+      });
+    } catch (error: any) {
+      console.error('Error deleting auction:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete auction. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleJoinAuction = (id: string) => {
@@ -234,7 +448,10 @@ const LiveAuctions: React.FC = () => {
               Logged in as: <span className="font-semibold">{profile?.full_name} ({profile?.role})</span>
             </p>
             {isStaffOrAdmin && (
-              <Button className="flex items-center gap-2">
+              <Button 
+                className="flex items-center gap-2"
+                onClick={() => setIsNewAuctionModalOpen(true)}
+              >
                 <Plus size={16} />
                 New Auction
               </Button>
@@ -320,6 +537,7 @@ const LiveAuctions: React.FC = () => {
                   onPause={handlePauseAuction}
                   onStop={handleStopAuction}
                   onJoin={handleJoinAuction}
+                  onDelete={handleDeleteAuction}
                 />
               ))}
             </div>
@@ -344,6 +562,7 @@ const LiveAuctions: React.FC = () => {
                 auction={auction}
                 onStart={handleStartAuction}
                 onJoin={handleJoinAuction}
+                onDelete={handleDeleteAuction}
               />
             ))}
           </div>
@@ -381,6 +600,7 @@ const LiveAuctions: React.FC = () => {
                     key={auction.id}
                     auction={auction}
                     onStart={handleStartAuction}
+                    onDelete={handleDeleteAuction}
                   />
                 ))}
               </div>
@@ -400,6 +620,7 @@ const LiveAuctions: React.FC = () => {
                   <LiveAuctionCard
                     key={auction.id}
                     auction={auction}
+                    onDelete={handleDeleteAuction}
                   />
                 ))}
               </div>
@@ -407,6 +628,62 @@ const LiveAuctions: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* New Auction Modal */}
+      <NewAuctionModal
+        open={isNewAuctionModalOpen}
+        onOpenChange={setIsNewAuctionModalOpen}
+        onSuccess={() => {
+          // Refresh auctions list
+          const fetchAuctions = async () => {
+            try {
+              const { data, error } = await supabase
+                .from('auction_events')
+                .select('*')
+                .order('start_date', { ascending: true });
+
+              if (error) {
+                console.error('Error fetching auctions:', error);
+                return;
+              }
+
+              const mappedAuctions: AuctionEvent[] = (data || []).map(auction => ({
+                id: auction.id,
+                title: auction.title || 'Untitled Auction',
+                theme_title: auction.theme_title || undefined,
+                date: new Date(auction.start_date).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                }),
+                time: `${new Date(auction.start_date).toLocaleTimeString('en-US', { 
+                  hour: 'numeric', 
+                  minute: '2-digit',
+                  hour12: true 
+                })} - ${new Date(auction.end_date).toLocaleTimeString('en-US', { 
+                  hour: 'numeric', 
+                  minute: '2-digit',
+                  hour12: true 
+                })}`,
+                status: auction.status === 'live' ? 'LIVE' : 
+                       auction.status === 'upcoming' ? 'UPCOMING' : 'COMPLETED',
+                itemCount: 0,
+                viewer_count: auction.viewer_count || 0,
+                total_bids: auction.total_bids || 0,
+                revenue: auction.revenue?.toString() || '0',
+                entrance_fee: auction.entrance_fee ? Number(auction.entrance_fee) : 0,
+                platform: 'youtube',
+                duration: undefined
+              }));
+
+              setAuctionEvents(mappedAuctions);
+            } catch (error) {
+              console.error('Error fetching auctions:', error);
+            }
+          };
+          fetchAuctions();
+        }}
+      />
     </div>
   );
 };
