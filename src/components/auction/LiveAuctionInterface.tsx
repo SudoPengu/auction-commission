@@ -203,6 +203,9 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
     }
   }, [isStaffOrAdmin, isBidder, isStreaming, auctionId]);
 
+  // Ref to track the stream-available announcement interval
+  const streamAnnounceIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const setupAdminWebRTC = async () => {
     if (!streamRef.current) return;
 
@@ -212,9 +215,9 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
       // Set up signaling channel first
       setupSignalingChannel('admin');
       
-      // Wait for channel to be ready, then create and broadcast offer
+      // Wait for channel to be ready, then announce stream availability
       setTimeout(() => {
-        createAndBroadcastOffer();
+        announceStreamAvailable();
       }, 1500);
 
     } catch (error) {
@@ -222,33 +225,66 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
     }
   };
 
-  const createPeerConnectionForBidder = async (bidderId: string) => {
-    if (!streamRef.current) return null;
+  // Announce that the stream is available — bidders will request an offer
+  const announceStreamAvailable = () => {
+    console.log('[WebRTC Admin] Announcing stream available');
+    sendSignalingMessage('stream-available', { streamerId: user?.id });
+    
+    // Re-announce periodically so late-joining bidders can discover the stream
+    if (streamAnnounceIntervalRef.current) {
+      clearInterval(streamAnnounceIntervalRef.current);
+    }
+    streamAnnounceIntervalRef.current = setInterval(() => {
+      // Use ref (not state) to avoid stale closure
+      if (streamRef.current) {
+        console.log('[WebRTC Admin] Re-announcing stream available');
+        sendSignalingMessage('stream-available', { streamerId: user?.id });
+      } else {
+        if (streamAnnounceIntervalRef.current) {
+          clearInterval(streamAnnounceIntervalRef.current);
+          streamAnnounceIntervalRef.current = null;
+        }
+      }
+    }, 5000); // Re-announce every 5 seconds
+  };
+
+  // Create a dedicated peer connection for a specific bidder and send them an offer
+  const createOfferForBidder = async (bidderId: string) => {
+    if (!streamRef.current) {
+      console.warn('[WebRTC Admin] No stream available for offer creation');
+      return;
+    }
+
+    // Close existing connection for this bidder if any
+    const existingPc = peerConnectionsRef.current.get(bidderId);
+    if (existingPc) {
+      console.log(`[WebRTC Admin] Closing existing connection for ${bidderId}`);
+      existingPc.close();
+      peerConnectionsRef.current.delete(bidderId);
+    }
 
     const pc = new RTCPeerConnection(ICE_SERVERS_CONFIG);
+    peerConnectionsRef.current.set(bidderId, pc);
 
     // Add local stream tracks
     streamRef.current.getTracks().forEach(track => {
       pc.addTrack(track, streamRef.current!);
-      console.log(`[WebRTC Admin] Added track to connection for ${bidderId}:`, track.kind);
+      console.log(`[WebRTC Admin] Added ${track.kind} track for bidder ${bidderId}`);
     });
 
-          // Handle ICE candidates - include bidderId so we know which connection this is for
-          pc.onicecandidate = (event) => {
-            if (event.candidate) {
-              console.log(`[WebRTC Admin] Sending ICE candidate for ${bidderId}`);
-              // Send candidate properties with bidderId
-              sendSignalingMessage('ice-candidate', { ...event.candidate.toJSON(), bidderId });
-            } else {
-              console.log(`[WebRTC Admin] All ICE candidates sent for ${bidderId}`);
-            }
-          };
+    // Handle ICE candidates — tag with bidderId so only the right bidder processes them
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        console.log(`[WebRTC Admin] Sending ICE candidate for ${bidderId}`);
+        sendSignalingMessage('ice-candidate', { ...event.candidate.toJSON(), targetBidderId: bidderId });
+      }
+    };
 
     // Handle connection state
     pc.onconnectionstatechange = () => {
       console.log(`[WebRTC Admin] Connection state for ${bidderId}:`, pc.connectionState);
       const hasConnected = Array.from(peerConnectionsRef.current.values())
-        .some(pc => pc.connectionState === 'connected');
+        .some(conn => conn.connectionState === 'connected');
       setWebrtcConnected(hasConnected);
       
       if (pc.connectionState === 'closed' || pc.connectionState === 'failed') {
@@ -256,60 +292,18 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
       }
     };
 
-    return pc;
-  };
-
-  const createAndBroadcastOffer = async () => {
-    if (!streamRef.current) return;
-
     try {
-      console.log('[WebRTC Admin] Broadcasting offer to all bidders');
-      
-      // Create a single connection that will be used for the first bidder
-      // For multiple bidders, we'll create additional connections as needed
-      const pc = new RTCPeerConnection(ICE_SERVERS_CONFIG);
-      
-      // Add local stream tracks
-      streamRef.current.getTracks().forEach(track => {
-        pc.addTrack(track, streamRef.current!);
-        console.log('[WebRTC Admin] Added track:', track.kind);
-      });
-
-      // Handle ICE candidates
-      pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          console.log('[WebRTC Admin] Broadcasting ICE candidate');
-          // Send candidate properties, not the object itself
-          sendSignalingMessage('ice-candidate', event.candidate.toJSON());
-        } else {
-          console.log('[WebRTC Admin] All ICE candidates sent');
-        }
-      };
-
-      // Handle connection state
-      pc.onconnectionstatechange = () => {
-        console.log('[WebRTC Admin] Connection state:', pc.connectionState);
-        const hasConnected = Array.from(peerConnectionsRef.current.values())
-          .some(pc => pc.connectionState === 'connected');
-        setWebrtcConnected(hasConnected);
-      };
-
-      // Create offer
+      // Create and send offer targeted at this specific bidder
       const offer = await pc.createOffer({
         offerToReceiveAudio: false,
-        offerToReceiveVideo: false
+        offerToReceiveVideo: false,
       });
       await pc.setLocalDescription(offer);
-      
-      // Store as the broadcast connection (for first bidder)
-      peerConnectionRef.current = pc;
 
-      // Broadcast offer to all bidders
-      sendSignalingMessage('offer', offer);
-      console.log('[WebRTC Admin] Broadcast offer sent');
-
+      sendSignalingMessage('offer', { ...offer, targetBidderId: bidderId });
+      console.log(`[WebRTC Admin] Sent offer to bidder ${bidderId}`);
     } catch (error) {
-      console.error('[WebRTC Admin] Error creating offer:', error);
+      console.error(`[WebRTC Admin] Error creating offer for ${bidderId}:`, error);
     }
   };
 
@@ -317,11 +311,14 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
     try {
       console.log('[WebRTC Bidder] Setting up to receive stream');
       
-      // Set up signaling channel first to listen for offers
+      // Set up signaling channel to listen for stream announcements and offers
       setupSignalingChannel('bidder');
       
-      // Peer connection will be created when we receive an offer
-      // This is handled in handleSignalingMessage
+      // After subscribing, request the stream (in case admin is already streaming)
+      setTimeout(() => {
+        console.log('[WebRTC Bidder] Sending initial request-offer');
+        sendSignalingMessage('request-offer', { bidderId: user?.id });
+      }, 2000);
 
     } catch (error) {
       console.error('[WebRTC Bidder] Error setting up:', error);
@@ -387,14 +384,11 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
       }
     };
 
-    // Handle ICE candidates
+    // Handle ICE candidates — tag with bidderId so admin routes to correct connection
     pc.onicecandidate = (event) => {
       if (event.candidate) {
         console.log('[WebRTC Bidder] Sending ICE candidate');
-        // Send candidate properties, not the object itself
-        sendSignalingMessage('ice-candidate', event.candidate.toJSON());
-      } else {
-        console.log('[WebRTC Bidder] All ICE candidates sent');
+        sendSignalingMessage('ice-candidate', { ...event.candidate.toJSON(), bidderId: user?.id });
       }
     };
 
@@ -508,26 +502,43 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
   };
 
   const handleSignalingMessage = async (message: any, role: 'admin' | 'bidder') => {
-    if (message.auctionId !== auctionId) {
-      console.log('[WebRTC] Ignoring message for different auction');
-      return;
-    }
-    
-    if (message.from === user?.id) {
-      console.log('[WebRTC] Ignoring own message');
-      return; // Ignore own messages
-    }
+    if (message.auctionId !== auctionId) return;
+    if (message.from === user?.id) return; // Ignore own messages
 
     try {
-      if (role === 'bidder' && message.type === 'offer') {
-        console.log('[WebRTC Bidder] Received offer');
-        
-        // Create peer connection if it doesn't exist, or reuse existing one
-        if (!peerConnectionRef.current) {
-          console.log('[WebRTC Bidder] Creating new peer connection');
-          await createBidderPeerConnection();
+      // ── ADMIN: bidder is requesting an offer ──
+      if (role === 'admin' && message.type === 'request-offer') {
+        const bidderId = message.data?.bidderId || message.from;
+        console.log(`[WebRTC Admin] Bidder ${bidderId} requested an offer`);
+        await createOfferForBidder(bidderId);
+        return;
+      }
+
+      // ── BIDDER: admin announces stream is available ──
+      if (role === 'bidder' && message.type === 'stream-available') {
+        console.log('[WebRTC Bidder] Stream is available, requesting offer');
+        // Only request if we don't already have an active connection
+        if (!peerConnectionRef.current || 
+            peerConnectionRef.current.connectionState === 'failed' ||
+            peerConnectionRef.current.connectionState === 'closed' ||
+            peerConnectionRef.current.connectionState === 'disconnected') {
+          sendSignalingMessage('request-offer', { bidderId: user?.id });
         }
-        
+        return;
+      }
+
+      // ── BIDDER: received an offer from admin ──
+      if (role === 'bidder' && message.type === 'offer') {
+        // Only process offers targeted at this bidder (or broadcast offers)
+        const targetBidderId = message.data?.targetBidderId;
+        if (targetBidderId && targetBidderId !== user?.id) {
+          return; // This offer is for a different bidder
+        }
+
+        console.log('[WebRTC Bidder] Received offer targeted at us');
+
+        // Always create a fresh connection for a new offer
+        await createBidderPeerConnection();
         const pc = peerConnectionRef.current;
         if (!pc) {
           console.error('[WebRTC Bidder] Failed to create peer connection');
@@ -535,159 +546,86 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
         }
 
         try {
-          // Check if we already have a remote description
-          if (pc.remoteDescription) {
-            console.log('[WebRTC Bidder] Already have remote description, creating new connection');
-            // Create a new connection for this offer
-            await createBidderPeerConnection();
-            const newPc = peerConnectionRef.current;
-            if (!newPc) return;
-            
-            await newPc.setRemoteDescription(new RTCSessionDescription(message.data));
-            const answer = await newPc.createAnswer();
-            await newPc.setLocalDescription(answer);
-            sendSignalingMessage('answer', answer);
-          } else {
-            console.log('[WebRTC Bidder] Setting remote description');
-            await pc.setRemoteDescription(new RTCSessionDescription(message.data));
-            
-            console.log('[WebRTC Bidder] Creating answer');
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            console.log('[WebRTC Bidder] Created answer, sending to admin');
-            
-            sendSignalingMessage('answer', answer);
-          }
+          // Extract SDP from data (strip our custom fields)
+          const { targetBidderId: _, ...sdpData } = message.data || {};
+          await pc.setRemoteDescription(new RTCSessionDescription(sdpData));
+          console.log('[WebRTC Bidder] Remote description set');
+
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          console.log('[WebRTC Bidder] Answer created, sending to admin');
+          
+          sendSignalingMessage('answer', { ...answer, bidderId: user?.id });
         } catch (error) {
           console.error('[WebRTC Bidder] Error handling offer:', error);
         }
-      } else if (role === 'admin' && message.type === 'answer') {
-        console.log('[WebRTC Admin] Received answer from bidder');
-        const bidderId = message.from || 'unknown';
-        
-        // Find the connection that sent the offer this answer is for
-        // For the first bidder, use the broadcast connection
-        let pc: RTCPeerConnection | null = null;
-        
-        if (peerConnectionRef.current && peerConnectionsRef.current.size === 0) {
-          // First bidder - use the broadcast connection
-          console.log(`[WebRTC Admin] First bidder ${bidderId}, using broadcast connection`);
-          pc = peerConnectionRef.current;
-          peerConnectionsRef.current.set(bidderId, pc);
-        } else if (peerConnectionsRef.current.has(bidderId)) {
-          // Existing connection for this bidder
-          pc = peerConnectionsRef.current.get(bidderId) || null;
-          console.log(`[WebRTC Admin] Using existing connection for ${bidderId}`);
-        } else {
-          // This shouldn't happen - answer without a connection
-          console.error(`[WebRTC Admin] Received answer from ${bidderId} but no connection exists!`);
-          // Create a connection and send a new offer
-          pc = await createPeerConnectionForBidder(bidderId);
-          if (!pc) {
-            console.error('[WebRTC Admin] Failed to create peer connection');
-            return;
-          }
-          peerConnectionsRef.current.set(bidderId, pc);
-          
-          // Create and send offer
-          try {
-            const offer = await pc.createOffer({
-              offerToReceiveAudio: false,
-              offerToReceiveVideo: false
-            });
-            await pc.setLocalDescription(offer);
-            console.log(`[WebRTC Admin] Created new offer for ${bidderId}, sending...`);
-            sendSignalingMessage('offer', offer);
-            return; // Wait for their answer to this new offer
-          } catch (error) {
-            console.error(`[WebRTC Admin] Error creating offer:`, error);
-            return;
-          }
-        }
-        
+        return;
+      }
+
+      // ── ADMIN: received an answer from a bidder ──
+      if (role === 'admin' && message.type === 'answer') {
+        const bidderId = message.data?.bidderId || message.from || 'unknown';
+        const pc = peerConnectionsRef.current.get(bidderId);
+
         if (!pc) {
-          console.error('[WebRTC Admin] No peer connection available');
+          console.error(`[WebRTC Admin] Received answer from ${bidderId} but no connection exists`);
           return;
         }
-        
-        // Set the answer on the connection
+
         try {
-          console.log(`[WebRTC Admin] Setting answer for ${bidderId}, current signaling state: ${pc.signalingState}`);
           if (pc.signalingState === 'have-local-offer') {
-            await pc.setRemoteDescription(new RTCSessionDescription(message.data));
-            console.log(`[WebRTC Admin] Successfully set remote description (answer) for ${bidderId}`);
-            console.log(`[WebRTC Admin] New signaling state: ${pc.signalingState}`);
+            // Extract SDP from data (strip our custom fields)
+            const { bidderId: _, ...sdpData } = message.data || {};
+            await pc.setRemoteDescription(new RTCSessionDescription(sdpData));
+            console.log(`[WebRTC Admin] Answer set for ${bidderId}, state: ${pc.signalingState}`);
           } else {
-            console.warn(`[WebRTC Admin] Cannot set answer - unexpected signaling state: ${pc.signalingState}`);
-            // Try to set it anyway
-            try {
-              await pc.setRemoteDescription(new RTCSessionDescription(message.data));
-              console.log(`[WebRTC Admin] Set answer despite unexpected state`);
-            } catch (err) {
-              console.error(`[WebRTC Admin] Failed to set answer:`, err);
-            }
+            console.warn(`[WebRTC Admin] Unexpected signaling state for ${bidderId}: ${pc.signalingState}`);
           }
         } catch (error) {
-          console.error(`[WebRTC Admin] Error setting remote description:`, error);
+          console.error(`[WebRTC Admin] Error setting answer for ${bidderId}:`, error);
         }
-      } else if (message.type === 'ice-candidate') {
-        console.log('[WebRTC] Received ICE candidate');
-        
-        // Get the appropriate peer connection
+        return;
+      }
+
+      // ── ICE candidates (both roles) ──
+      if (message.type === 'ice-candidate') {
         let targetPc: RTCPeerConnection | null = null;
+
         if (role === 'bidder') {
+          // Only accept ICE candidates targeted at us
+          const targetBidderId = message.data?.targetBidderId;
+          if (targetBidderId && targetBidderId !== user?.id) return;
           targetPc = peerConnectionRef.current;
         } else if (role === 'admin') {
           const bidderId = message.data?.bidderId || message.from;
-          targetPc = peerConnectionsRef.current.get(bidderId) || peerConnectionRef.current;
+          targetPc = peerConnectionsRef.current.get(bidderId) || null;
         }
-        
+
         if (!targetPc) {
-          console.warn('[WebRTC] No peer connection available for ICE candidate');
+          console.warn('[WebRTC] No peer connection for ICE candidate');
           return;
         }
-        
-        // Extract candidate data - message.data should be the candidate properties from toJSON()
-        let candidateData = message.data;
-        
-        console.log('[WebRTC] Raw candidate data received:', candidateData, typeof candidateData);
-        
-        // Remove bidderId if present (it's metadata, not part of candidate)
-        if (candidateData && typeof candidateData === 'object' && 'bidderId' in candidateData) {
-          const { bidderId, ...candidateProps } = candidateData;
-          candidateData = candidateProps;
-        }
-        
-        // Validate candidate data structure
-        if (candidateData && typeof candidateData === 'object') {
-          // RTCIceCandidateInit requires: candidate (string), sdpMLineIndex (number), sdpMid (string | null)
-          if (candidateData.candidate && typeof candidateData.candidate === 'string') {
-            try {
-              // Ensure we have the required fields with defaults
-              // sdpMLineIndex must be a number (0 or higher), not null
-              const candidateInit: RTCIceCandidateInit = {
-                candidate: candidateData.candidate,
-                sdpMLineIndex: candidateData.sdpMLineIndex !== undefined && candidateData.sdpMLineIndex !== null 
-                  ? candidateData.sdpMLineIndex 
-                  : 0,
-                sdpMid: candidateData.sdpMid ?? null,
-                usernameFragment: candidateData.usernameFragment ?? undefined
-              };
-              
-              console.log('[WebRTC] Creating ICE candidate with:', candidateInit);
-              const candidate = new RTCIceCandidate(candidateInit);
-              await targetPc.addIceCandidate(candidate);
-              console.log('[WebRTC] Successfully added ICE candidate');
-            } catch (error) {
-              console.error('[WebRTC] Error adding ICE candidate:', error);
-              console.error('[WebRTC] Candidate data received:', candidateData);
-            }
-          } else {
-            console.warn('[WebRTC] Invalid ICE candidate data - missing or invalid candidate string:', candidateData);
+
+        // Clean metadata fields from candidate data
+        let candidateData = { ...message.data };
+        delete candidateData.targetBidderId;
+        delete candidateData.bidderId;
+
+        if (candidateData?.candidate && typeof candidateData.candidate === 'string') {
+          try {
+            const candidateInit: RTCIceCandidateInit = {
+              candidate: candidateData.candidate,
+              sdpMLineIndex: candidateData.sdpMLineIndex ?? 0,
+              sdpMid: candidateData.sdpMid ?? null,
+              usernameFragment: candidateData.usernameFragment ?? undefined,
+            };
+            await targetPc.addIceCandidate(new RTCIceCandidate(candidateInit));
+            console.log(`[WebRTC ${role}] Added ICE candidate`);
+          } catch (error) {
+            console.error(`[WebRTC ${role}] Error adding ICE candidate:`, error);
           }
-        } else {
-          console.warn('[WebRTC] Invalid ICE candidate data - not an object:', candidateData, typeof candidateData);
         }
+        return;
       }
     } catch (error) {
       console.error(`[WebRTC ${role}] Error handling signal:`, error);
@@ -695,6 +633,12 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
   };
 
   const cleanupWebRTC = () => {
+    // Stop stream announcements
+    if (streamAnnounceIntervalRef.current) {
+      clearInterval(streamAnnounceIntervalRef.current);
+      streamAnnounceIntervalRef.current = null;
+    }
+
     // Close all peer connections
     if (peerConnectionRef.current) {
       peerConnectionRef.current.close();
