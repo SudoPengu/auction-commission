@@ -11,6 +11,35 @@ import { AuctionLot, BidResponse } from '@/types/auction';
 import { toast } from '@/hooks/use-toast';
 import { InventoryItem } from '@/services/inventoryService';
 
+// Shared WebRTC ICE configuration with STUN + TURN servers
+// TURN servers are required for connections across different networks (e.g. mobile data)
+const ICE_SERVERS_CONFIG: RTCConfiguration = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+    // Free TURN relay servers (required for mobile data / symmetric NAT)
+    {
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: 'turns:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+  ],
+  iceCandidatePoolSize: 10,
+};
+
 interface LiveAuctionInterfaceProps {
   auctionId: string;
   auctionTitle: string;
@@ -196,14 +225,7 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
   const createPeerConnectionForBidder = async (bidderId: string) => {
     if (!streamRef.current) return null;
 
-    const configuration: RTCConfiguration = {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
-      ]
-    };
-
-    const pc = new RTCPeerConnection(configuration);
+    const pc = new RTCPeerConnection(ICE_SERVERS_CONFIG);
 
     // Add local stream tracks
     streamRef.current.getTracks().forEach(track => {
@@ -245,14 +267,7 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
       
       // Create a single connection that will be used for the first bidder
       // For multiple bidders, we'll create additional connections as needed
-      const configuration: RTCConfiguration = {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
-        ]
-      };
-
-      const pc = new RTCPeerConnection(configuration);
+      const pc = new RTCPeerConnection(ICE_SERVERS_CONFIG);
       
       // Add local stream tracks
       streamRef.current.getTracks().forEach(track => {
@@ -320,18 +335,11 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
       peerConnectionRef.current.close();
     }
     
-    // Create peer connection
-    const configuration: RTCConfiguration = {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
-      ]
-    };
-
-    const pc = new RTCPeerConnection(configuration);
+    // Create peer connection with TURN servers for cross-network support
+    const pc = new RTCPeerConnection(ICE_SERVERS_CONFIG);
     peerConnectionRef.current = pc;
     
-    console.log('[WebRTC Bidder] Created new peer connection');
+    console.log('[WebRTC Bidder] Created new peer connection with TURN servers');
 
     // Handle incoming stream
     pc.ontrack = (event) => {
@@ -1226,10 +1234,6 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
                           <div className="flex items-center gap-2">
                             <div className={`w-3 h-3 rounded-full ${isStreaming ? 'bg-red-500 animate-pulse' : 'bg-gray-500'}`}></div>
                             <span className="text-sm font-medium">{isStreaming ? 'LIVE' : 'OFFLINE'}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <Users className="h-4 w-4" />
-                            <span>{0} viewers</span>
                           </div>
                         </div>
                         
