@@ -109,13 +109,6 @@ const Login: React.FC = () => {
     try {
       const loginEmail = USER_EMAIL_MAP[values.identifier] || values.identifier;
       
-      // DEBUG: Log which Supabase instance we're connecting to
-      console.log("=== LOGIN DEBUG ===");
-      console.log("Supabase URL:", import.meta.env.VITE_SUPABASE_URL);
-      console.log("Login email:", loginEmail);
-      console.log("Password length:", values.password.length);
-      console.log("===================");
-      
       const success = await login(loginEmail, values.password);
       
       if (success) {

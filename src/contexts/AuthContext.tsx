@@ -155,7 +155,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // Clear all possible auth tokens from localStorage
       localStorage.removeItem('supabase.auth.token');
-      localStorage.removeItem('sb-kfurwthocpxsvzgnsbgd-auth-token');
+      // Clear Supabase auth tokens for any project
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+          localStorage.removeItem(key);
+        }
+      });
       
       // Check if session exists before attempting signOut
       const { data: { session } } = await supabase.auth.getSession();
