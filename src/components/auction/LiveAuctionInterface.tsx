@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Gavel, Clock, Users, AlertCircle, Mic, Video, Settings, Play, Pause, SkipForward, Camera, VideoOff, Package, Plus, Square } from 'lucide-react';
+import { Eye, Gavel, Clock, Users, AlertCircle, Mic, Video, Settings, Play, Pause, SkipForward, Camera, VideoOff, Package, Plus, Square, Volume2, VolumeX } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuctionRealtime } from '@/hooks/useAuctionRealtime';
 import { supabase } from '@/integrations/supabase/client';
@@ -101,8 +101,9 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
   
-  // Mobile autoplay state
+  // Mobile autoplay & audio state
   const [needsTapToPlay, setNeedsTapToPlay] = useState(false);
+  const [isMuted, setIsMuted] = useState(true); // Start muted for autoplay, unmute after interaction
 
   const isBidder = profile?.role === 'bidder';
   const isStaffOrAdmin = profile?.role && ['staff', 'admin', 'super-admin', 'auction-manager'].includes(profile.role);
@@ -389,8 +390,14 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
           const playPromise = bidderVideoRef.current.play();
           if (playPromise !== undefined) {
             playPromise.then(() => {
-              console.log('[WebRTC Bidder] Video play() succeeded');
+              console.log('[WebRTC Bidder] Video play() succeeded (muted for autoplay)');
               setNeedsTapToPlay(false);
+              // Try to unmute — this may fail without user gesture on some browsers
+              if (bidderVideoRef.current) {
+                bidderVideoRef.current.muted = false;
+                setIsMuted(false);
+                console.log('[WebRTC Bidder] Unmuted after autoplay');
+              }
             }).catch(err => {
               console.warn('[WebRTC Bidder] Auto-play blocked on mobile:', err);
               setNeedsTapToPlay(true);
@@ -1100,16 +1107,19 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
                       ref={bidderVideoRef}
                       autoPlay
                       playsInline
-                      muted
+                      muted={isMuted}
                       webkit-playsinline="true"
                       className="w-full h-full object-cover"
                       onLoadedMetadata={() => {
                         console.log('[WebRTC Bidder] Video metadata loaded');
                         if (bidderVideoRef.current) {
+                          // Must be muted for autoplay to work on mobile
+                          bidderVideoRef.current.muted = true;
+                          setIsMuted(true);
                           const playPromise = bidderVideoRef.current.play();
                           if (playPromise !== undefined) {
                             playPromise.then(() => {
-                              console.log('[WebRTC Bidder] Auto-play succeeded');
+                              console.log('[WebRTC Bidder] Auto-play succeeded (muted)');
                               setNeedsTapToPlay(false);
                             }).catch(err => {
                               console.warn('[WebRTC Bidder] Auto-play blocked, showing tap-to-play:', err);
@@ -1138,10 +1148,16 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
                         className="absolute inset-0 flex items-center justify-center text-white bg-black/70 cursor-pointer z-10"
                         onClick={() => {
                           if (bidderVideoRef.current) {
+                            // Start muted to ensure play works, then immediately unmute (user gesture allows it)
                             bidderVideoRef.current.muted = true;
                             bidderVideoRef.current.play().then(() => {
                               setNeedsTapToPlay(false);
-                              console.log('[WebRTC Bidder] Manual play succeeded');
+                              // Unmute after play succeeds — user gesture context allows this
+                              if (bidderVideoRef.current) {
+                                bidderVideoRef.current.muted = false;
+                                setIsMuted(false);
+                              }
+                              console.log('[WebRTC Bidder] Manual play succeeded with audio');
                             }).catch(err => {
                               console.error('[WebRTC Bidder] Manual play failed:', err);
                             });
@@ -1163,6 +1179,21 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
                             ● LIVE
                           </Badge>
                         </div>
+                        {/* Audio mute/unmute toggle */}
+                        <button
+                          className="absolute bottom-4 right-4 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full backdrop-blur-sm transition-colors z-10"
+                          onClick={() => {
+                            if (bidderVideoRef.current) {
+                              const newMuted = !bidderVideoRef.current.muted;
+                              bidderVideoRef.current.muted = newMuted;
+                              setIsMuted(newMuted);
+                              console.log(`[WebRTC Bidder] Audio ${newMuted ? 'muted' : 'unmuted'}`);
+                            }
+                          }}
+                          title={isMuted ? 'Unmute audio' : 'Mute audio'}
+                        >
+                          {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                        </button>
                       </>
                     ) : webrtcConnected ? (
                       <div className="absolute inset-0 flex items-center justify-center text-white bg-black/50">
