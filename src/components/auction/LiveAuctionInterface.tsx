@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Gavel, Clock, Users, AlertCircle, Mic, Video, Settings, Play, Pause, SkipForward, Camera, VideoOff, Package, Plus, Square, Volume2, VolumeX } from 'lucide-react';
+import { Eye, Gavel, Clock, Users, AlertCircle, Mic, Video, Settings, Play, Pause, SkipForward, Camera, VideoOff, Package, Plus, Square, Volume2, VolumeX, Send, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuctionRealtime } from '@/hooks/useAuctionRealtime';
 import { supabase } from '@/integrations/supabase/client';
@@ -104,6 +105,11 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
   // Mobile autoplay & audio state
   const [needsTapToPlay, setNeedsTapToPlay] = useState(false);
   const [isMuted, setIsMuted] = useState(true); // Start muted for autoplay, unmute after interaction
+
+  // Quick bid state
+  const [quickBidAmount, setQuickBidAmount] = useState(0);
+  const [manualBidInput, setManualBidInput] = useState('');
+  const [isSubmittingBid, setIsSubmittingBid] = useState(false);
 
   const isBidder = profile?.role === 'bidder';
   const isStaffOrAdmin = profile?.role && ['staff', 'admin', 'super-admin', 'auction-manager'].includes(profile.role);
@@ -1000,7 +1006,7 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
           description: `Category: ${inventoryItem.category_name || 'N/A'}, Condition: ${inventoryItem.condition}`,
           starting_price: inventoryItem.starting_bid_price,
           current_price: inventoryItem.starting_bid_price,
-          status: 'PENDING',
+          status: 'OPEN',
         })
         .select()
         .single();
@@ -1034,9 +1040,84 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
     }
   };
 
+  // Remove a lot from the auction (admin only)
+  const removeLotFromAuction = async (lotId: string, lotTitle: string) => {
+    try {
+      const { error } = await supabase
+        .from('auction_lots')
+        .delete()
+        .eq('id', lotId);
+
+      if (error) throw error;
+
+      // If the removed lot was the current lot, deselect it
+      if (currentLot?.id === lotId) {
+        setCurrentLot(null);
+      }
+
+      toast({
+        title: 'Lot Removed',
+        description: `"${lotTitle}" has been removed from the auction.`,
+      });
+    } catch (error: any) {
+      console.error('Error removing lot:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to remove lot',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleBidSuccess = (response: BidResponse) => {
     console.log('Bid placed successfully:', response);
     // The realtime subscription will handle updating the UI
+  };
+
+  // Quick bid: add increment to the running total
+  const addQuickBid = (increment: number) => {
+    setQuickBidAmount(prev => prev + increment);
+  };
+
+  // Submit the quick bid
+  const submitQuickBid = async (amount: number) => {
+    if (!currentLot || amount <= 0) return;
+    if (currentLot.status !== 'OPEN') {
+      toast({ title: "Lot Closed", description: "This lot is no longer accepting bids.", variant: "destructive" });
+      return;
+    }
+
+    setIsSubmittingBid(true);
+    try {
+      const { data, error } = await supabase.rpc('place_bid' as any, {
+        p_lot_id: currentLot.id,
+        p_amount: amount,
+      });
+
+      if (error) {
+        toast({ title: "Bid Failed", description: error.message || "Failed to place bid", variant: "destructive" });
+        return;
+      }
+
+      const response = data as unknown as BidResponse;
+      if (!response.success) {
+        toast({
+          title: response.action === 'pay_entry_fee' ? "Entrance Fee Required" : "Bid Rejected",
+          description: response.error || "Your bid was not accepted",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({ title: "Bid Placed!", description: `Your bid of ₱${amount.toLocaleString()} has been placed!` });
+      setQuickBidAmount(0);
+      setManualBidInput('');
+      handleBidSuccess(response);
+    } catch {
+      toast({ title: "Network Error", description: "Failed to place bid. Please try again.", variant: "destructive" });
+    } finally {
+      setIsSubmittingBid(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -1355,6 +1436,114 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
             </CardContent>
           </Card>
 
+          {/* Quick Bid Panel — always shown to bidders below the video */}
+          {isBidder && (
+            <Card>
+              <CardContent className="p-3 sm:p-4 space-y-3">
+                {/* Current price display */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    {currentLot ? `Lot #${currentLot.lot_number}: ${currentLot.title}` : 'Place Your Bid'}
+                  </span>
+                  <span className="text-lg sm:text-xl font-bold">
+                    {currentLot ? `₱${currentLot.current_price.toLocaleString()}` : '—'}
+                  </span>
+                </div>
+
+                {/* Increment buttons */}
+                <div className="grid grid-cols-4 gap-2">
+                  {[50, 100, 250, 500].map((amount) => (
+                    <Button
+                      key={amount}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs sm:text-sm font-semibold"
+                      onClick={() => addQuickBid(amount)}
+                      disabled={isSubmittingBid || !currentLot || currentLot.status !== 'OPEN'}
+                    >
+                      +₱{amount}
+                    </Button>
+                  ))}
+                </div>
+
+                {/* Running total & submit */}
+                {quickBidAmount > 0 && (
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-muted rounded-md px-3 py-2 text-center">
+                      <span className="text-xs text-muted-foreground block">Your Bid</span>
+                      <span className="text-lg font-bold">₱{quickBidAmount.toLocaleString()}</span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-xs text-muted-foreground"
+                      onClick={() => setQuickBidAmount(0)}
+                      disabled={isSubmittingBid}
+                    >
+                      Clear
+                    </Button>
+                    <Button
+                      className="px-6"
+                      onClick={() => submitQuickBid(quickBidAmount)}
+                      disabled={isSubmittingBid || quickBidAmount <= 0}
+                    >
+                      <Gavel className="h-4 w-4 mr-1" />
+                      {isSubmittingBid ? 'Bidding...' : 'Bid'}
+                    </Button>
+                  </div>
+                )}
+
+                {/* Divider */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-background px-2 text-muted-foreground">or enter amount</span>
+                  </div>
+                </div>
+
+                {/* Manual input */}
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₱</span>
+                    <Input
+                      type="number"
+                      placeholder="Enter bid amount"
+                      className="pl-7"
+                      value={manualBidInput}
+                      onChange={(e) => setManualBidInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const amt = parseInt(manualBidInput);
+                          if (amt > 0) submitQuickBid(amt);
+                        }
+                      }}
+                      disabled={isSubmittingBid || !currentLot || currentLot.status !== 'OPEN'}
+                    />
+                  </div>
+                  <Button
+                    onClick={() => {
+                      const amt = parseInt(manualBidInput);
+                      if (amt > 0) submitQuickBid(amt);
+                    }}
+                    disabled={isSubmittingBid || !manualBidInput || parseInt(manualBidInput) <= 0 || !currentLot || currentLot.status !== 'OPEN'}
+                  >
+                    <Send className="h-4 w-4 mr-1" />
+                    Place Bid
+                  </Button>
+                </div>
+
+                {/* Status message when no lot is open */}
+                {(!currentLot || currentLot.status !== 'OPEN') && (
+                  <p className="text-xs text-center text-muted-foreground">
+                    {!currentLot ? 'Waiting for auctioneer to open a lot...' : `Lot is ${currentLot.status.toLowerCase()}`}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Current Lot Details */}
           {currentLot && (
             <Card>
@@ -1505,9 +1694,25 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
                   >
                     <div className="flex items-center justify-between mb-1">
                       <span className="font-medium">#{lot.lot_number}</span>
-                      <Badge className={getStatusColor(lot.status)} variant="secondary">
-                        {lot.status}
-                      </Badge>
+                      <div className="flex items-center gap-1">
+                        <Badge className={getStatusColor(lot.status)} variant="secondary">
+                          {lot.status}
+                        </Badge>
+                        {isStaffOrAdmin && (
+                          <button
+                            className="ml-1 p-1 rounded-full hover:bg-red-100 text-muted-foreground hover:text-red-600 transition-colors"
+                            title="Remove lot"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(`Remove "${lot.title}" from the auction?`)) {
+                                removeLotFromAuction(lot.id, lot.title);
+                              }
+                            }}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <div className="text-sm text-muted-foreground mb-1">{lot.title}</div>
                     <div className="text-sm font-semibold">₱{lot.current_price.toLocaleString()}</div>

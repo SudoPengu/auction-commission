@@ -397,17 +397,18 @@ const LiveAuctions: React.FC = () => {
   if (selectedAuction) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
           <Button 
             variant="outline" 
+            size="sm"
             onClick={handleBackToList}
-            className="flex items-center gap-2"
+            className="flex items-center gap-1 w-fit text-xs sm:text-sm"
           >
-            ← Back to Auctions
+            ← Back
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Live Auction Interface</h1>
-            <p className="text-muted-foreground">Real-time bidding for {selectedAuction.title}</p>
+            <h1 className="text-xl sm:text-2xl font-bold">Live Auction Interface</h1>
+            <p className="text-sm text-muted-foreground">Real-time bidding for {selectedAuction.title}</p>
           </div>
         </div>
         
