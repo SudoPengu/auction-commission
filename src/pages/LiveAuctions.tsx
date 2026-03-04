@@ -147,12 +147,50 @@ const LiveAuctions: React.FC = () => {
 
   const handleStopAuction = async (id: string) => {
     try {
+      const nowIso = new Date().toISOString();
+
+      // Finalize remaining lots so won items appear in bidder settlements.
+      const { data: lotsToFinalize, error: lotsFetchError } = await supabase
+        .from('auction_lots')
+        .select('id, current_bidder_id')
+        .eq('auction_id', id)
+        .in('status', ['OPEN', 'PENDING']);
+
+      if (lotsFetchError) {
+        console.warn('Failed to fetch lots for finalization:', lotsFetchError);
+      } else if (lotsToFinalize && lotsToFinalize.length > 0) {
+        const soldLotIds = lotsToFinalize.filter((lot) => !!lot.current_bidder_id).map((lot) => lot.id);
+        const skippedLotIds = lotsToFinalize.filter((lot) => !lot.current_bidder_id).map((lot) => lot.id);
+
+        if (soldLotIds.length > 0) {
+          const { error: soldUpdateError } = await supabase
+            .from('auction_lots')
+            .update({ status: 'SOLD', updated_at: nowIso })
+            .in('id', soldLotIds);
+
+          if (soldUpdateError) {
+            console.warn('Failed to mark sold lots:', soldUpdateError);
+          }
+        }
+
+        if (skippedLotIds.length > 0) {
+          const { error: skippedUpdateError } = await supabase
+            .from('auction_lots')
+            .update({ status: 'SKIPPED', updated_at: nowIso })
+            .in('id', skippedLotIds);
+
+          if (skippedUpdateError) {
+            console.warn('Failed to mark skipped lots:', skippedUpdateError);
+          }
+        }
+      }
+
       // Update auction status to completed
       const { error: auctionError } = await supabase
         .from('auction_events')
         .update({ 
           status: 'completed',
-          updated_at: new Date().toISOString()
+          updated_at: nowIso
         })
         .eq('id', id);
 
@@ -163,7 +201,7 @@ const LiveAuctions: React.FC = () => {
         .from('auction_streams')
         .update({ 
           is_active: false,
-          updated_at: new Date().toISOString()
+          updated_at: nowIso
         })
         .eq('auction_id', id);
 

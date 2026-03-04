@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarDays, Clock, DollarSign, Gavel, Search, Trophy, AlertCircle } from 'lucide-react';
+import { CalendarDays, Clock, DollarSign, Gavel, Loader2, Search, ShoppingBag, Trophy, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { getBidderMockSettlements } from '@/utils/mockAuctionSettlement';
 
 interface BidHistory {
   id: number;
@@ -20,12 +23,116 @@ interface BidHistory {
   itemImage?: string;
 }
 
+interface WonLotCheckout {
+  lotId: string;
+  auctionId: string;
+  auctionTitle: string;
+  lotTitle: string;
+  lotNumber: number;
+  amount: number;
+  paymentStatus: 'pending' | 'paid';
+}
+
+interface SoldLotRow {
+  id: string;
+  auction_id: string;
+  lot_number: number;
+  title: string;
+  current_price: number;
+  current_bidder_id: string | null;
+  auction_events: { title: string; status: string; end_date: string } | { title: string; status: string; end_date: string }[] | null;
+}
+
 const MyBids: React.FC = () => {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
+  const [wonLotsCheckout, setWonLotsCheckout] = useState<WonLotCheckout[]>([]);
+  const [isLoadingCheckout, setIsLoadingCheckout] = useState(true);
 
   // TODO: Replace with actual bid data from backend
   const mockBids: BidHistory[] = [];
+
+  const loadWonLotsCheckout = useCallback(async () => {
+    if (!user) {
+      setWonLotsCheckout([]);
+      setIsLoadingCheckout(false);
+      return;
+    }
+
+    setIsLoadingCheckout(true);
+    try {
+      const { data, error } = await supabase
+        .from('auction_lots')
+        .select('id, auction_id, lot_number, title, current_price, current_bidder_id, auction_events!inner(title,status,end_date)')
+        .eq('current_bidder_id', user.id)
+        .in('status', ['SOLD', 'OPEN'])
+        .eq('auction_events.status', 'completed');
+
+      if (error) throw error;
+
+      const soldLotRows = (data || []) as SoldLotRow[];
+      const soldLots = soldLotRows.map((lot) => ({
+        lotId: lot.id as string,
+        auctionId: lot.auction_id as string,
+        lotTitle: lot.title as string,
+        lotNumber: lot.lot_number as number,
+        amount: lot.current_price as number,
+      }));
+
+      const settlementRows = await getBidderMockSettlements(user.id);
+      const settlementMap = settlementRows.reduce<Record<string, 'pending' | 'paid'>>((acc, row) => {
+        acc[row.lotId] = row.status;
+        return acc;
+      }, {});
+
+      const checkoutRows: WonLotCheckout[] = soldLots.map((lot) => {
+        const source = soldLotRows.find((row) => row.id === lot.lotId);
+        const auctionTitle = Array.isArray(source?.auction_events)
+          ? source?.auction_events[0]?.title
+          : source?.auction_events?.title;
+        return {
+          lotId: lot.lotId,
+          auctionId: lot.auctionId,
+          auctionTitle: auctionTitle || 'Auction',
+          lotTitle: lot.lotTitle,
+          lotNumber: lot.lotNumber,
+          amount: lot.amount,
+          paymentStatus: settlementMap[lot.lotId] || 'pending',
+        };
+      });
+
+      const sortedRows = [...checkoutRows].sort((a, b) => {
+        if (a.paymentStatus === b.paymentStatus) return b.amount - a.amount;
+        return a.paymentStatus === 'pending' ? -1 : 1;
+      });
+      setWonLotsCheckout(sortedRows);
+    } catch (error) {
+      console.error('Error loading won-lot checkout:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load your won lots.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingCheckout(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    loadWonLotsCheckout();
+  }, [loadWonLotsCheckout]);
+
+  const checkoutTotals = useMemo(() => {
+    const pendingItems = wonLotsCheckout.filter((item) => item.paymentStatus === 'pending');
+    const paidItems = wonLotsCheckout.filter((item) => item.paymentStatus === 'paid');
+    return {
+      pendingCount: pendingItems.length,
+      paidCount: paidItems.length,
+      pendingAmount: pendingItems.reduce((sum, item) => sum + item.amount, 0),
+      paidAmount: paidItems.reduce((sum, item) => sum + item.amount, 0),
+      totalAmount: wonLotsCheckout.reduce((sum, item) => sum + item.amount, 0),
+    };
+  }, [wonLotsCheckout]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -85,6 +192,73 @@ const MyBids: React.FC = () => {
           Welcome back, <span className="font-semibold">{profile?.full_name}</span>
         </div>
       </div>
+
+      <Card className="border-primary/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShoppingBag className="h-5 w-5" />
+            Won Items Summary
+          </CardTitle>
+          <CardDescription>
+            All items you won from completed live auctions, including pending and paid.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isLoadingCheckout ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : wonLotsCheckout.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No won lots from ended auctions yet.
+            </p>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="p-3 rounded-md bg-muted">
+                  <p className="text-xs text-muted-foreground">Pending Lots</p>
+                  <p className="text-xl font-semibold">{checkoutTotals.pendingCount}</p>
+                </div>
+                <div className="p-3 rounded-md bg-muted">
+                  <p className="text-xs text-muted-foreground">Paid Lots</p>
+                  <p className="text-xl font-semibold">{checkoutTotals.paidCount}</p>
+                </div>
+                <div className="p-3 rounded-md bg-muted">
+                  <p className="text-xs text-muted-foreground">Pending Total</p>
+                  <p className="text-xl font-semibold">₱{checkoutTotals.pendingAmount.toLocaleString()}</p>
+                </div>
+                <div className="p-3 rounded-md bg-muted">
+                  <p className="text-xs text-muted-foreground">Paid Total</p>
+                  <p className="text-xl font-semibold">₱{checkoutTotals.paidAmount.toLocaleString()}</p>
+                </div>
+                <div className="p-3 rounded-md bg-muted">
+                  <p className="text-xs text-muted-foreground">Won Total</p>
+                  <p className="text-xl font-semibold">₱{checkoutTotals.totalAmount.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {wonLotsCheckout.map((lot) => (
+                  <div key={lot.lotId} className="p-3 rounded-md border flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-medium">Lot #{lot.lotNumber} - {lot.lotTitle}</p>
+                      <p className="text-xs text-muted-foreground">{lot.auctionTitle}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold">₱{lot.amount.toLocaleString()}</p>
+                      <div className="mt-1 flex items-center gap-2 justify-end">
+                        <Badge variant={lot.paymentStatus === 'paid' ? 'default' : 'outline'}>
+                          {lot.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>

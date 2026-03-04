@@ -20,6 +20,7 @@ import {
   Trash2,
   CheckCircle,
   Clock,
+  XCircle,
   Eye,
   Smartphone,
   CreditCard,
@@ -27,10 +28,17 @@ import {
   Image as ImageIcon,
   Receipt,
   Filter,
+  Gavel,
+  SquarePen,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  getAllMockSettlements,
+  syncSoldLotsToMockSettlement,
+  updateMockSettlementRecord,
+} from '@/utils/mockAuctionSettlement';
 
 interface PaymentQRCode {
   id: string;
@@ -63,6 +71,19 @@ interface EntranceFeeReceipt {
   auction_title?: string;
 }
 
+interface PendingBidSettlement {
+  lot_id: string;
+  auction_id: string;
+  lot_number: number;
+  lot_title: string;
+  bidder_id: string;
+  bidder_name: string;
+  bidder_email: string;
+  auction_title: string;
+  amount: number;
+  status: 'pending' | 'paid';
+}
+
 const PAYMENT_METHODS = [
   { value: 'gcash', label: 'GCash', icon: Smartphone },
   { value: 'maya', label: 'Maya', icon: Smartphone },
@@ -89,11 +110,18 @@ const Payments: React.FC = () => {
   const [receiptFilter, setReceiptFilter] = useState<string>('all');
   const [selectedReceipt, setSelectedReceipt] = useState<EntranceFeeReceipt | null>(null);
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
+  const [pendingSettlements, setPendingSettlements] = useState<PendingBidSettlement[]>([]);
+  const [isLoadingPending, setIsLoadingPending] = useState(true);
+  const [selectedPending, setSelectedPending] = useState<PendingBidSettlement | null>(null);
+  const [isPendingDialogOpen, setIsPendingDialogOpen] = useState(false);
+  const [editPendingAmount, setEditPendingAmount] = useState('');
+  const [editPendingStatus, setEditPendingStatus] = useState<'pending' | 'paid'>('pending');
 
   // Fetch QR codes
   useEffect(() => {
     fetchQRCodes();
     fetchReceipts();
+    fetchPendingSettlements();
   }, []);
 
   const fetchQRCodes = async () => {
@@ -176,6 +204,78 @@ const Payments: React.FC = () => {
       });
     } finally {
       setIsLoadingReceipts(false);
+    }
+  };
+
+  const fetchPendingSettlements = async () => {
+    setIsLoadingPending(true);
+    try {
+      const { data: lotsData, error: lotsError } = await supabase
+        .from('auction_lots')
+        .select('id, auction_id, lot_number, title, current_price, current_bidder_id, status')
+        .not('current_bidder_id', 'is', null)
+        .in('status', ['SOLD', 'OPEN']);
+
+      if (lotsError) throw lotsError;
+
+      const lots = lotsData || [];
+      if (lots.length === 0) {
+        setPendingSettlements([]);
+        return;
+      }
+
+      const soldInputs = lots.map((lot) => ({
+        lotId: lot.id,
+        auctionId: lot.auction_id,
+        bidderId: lot.current_bidder_id as string,
+        lotTitle: lot.title,
+        lotNumber: lot.lot_number,
+        amount: lot.current_price,
+      }));
+      await syncSoldLotsToMockSettlement(soldInputs);
+
+      const allSettlements = await getAllMockSettlements();
+      const settlementMap = allSettlements.reduce<Record<string, { status: 'pending' | 'paid'; amount: number }>>((acc, row) => {
+        acc[row.lotId] = { status: row.status, amount: row.amount };
+        return acc;
+      }, {});
+
+      const rows: PendingBidSettlement[] = [];
+      for (const lot of lots) {
+        const [auctionRes, bidderRes] = await Promise.all([
+          supabase.from('auction_events').select('title, status').eq('id', lot.auction_id).single(),
+          supabase.from('bidders').select('full_name, email').eq('id', lot.current_bidder_id as string).single(),
+        ]);
+
+        if (!auctionRes.data || auctionRes.data.status !== 'completed') {
+          continue;
+        }
+
+        const settlement = settlementMap[lot.id];
+        rows.push({
+          lot_id: lot.id,
+          auction_id: lot.auction_id,
+          lot_number: lot.lot_number,
+          lot_title: lot.title,
+          bidder_id: lot.current_bidder_id as string,
+          bidder_name: bidderRes.data?.full_name || 'Unknown',
+          bidder_email: bidderRes.data?.email || '',
+          auction_title: auctionRes.data.title || 'Auction',
+          amount: settlement?.amount ?? lot.current_price,
+          status: settlement?.status ?? 'pending',
+        });
+      }
+
+      setPendingSettlements(rows.filter((row) => row.status === 'pending'));
+    } catch (error: any) {
+      console.error('Error fetching pending settlements:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load pending won bids.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingPending(false);
     }
   };
 
@@ -332,6 +432,57 @@ const Payments: React.FC = () => {
     setIsReviewDialogOpen(true);
   };
 
+  const handleEditPending = (row: PendingBidSettlement) => {
+    setSelectedPending(row);
+    setEditPendingAmount(String(row.amount));
+    setEditPendingStatus(row.status);
+    setIsPendingDialogOpen(true);
+  };
+
+  const handleSavePendingEdit = async () => {
+    if (!selectedPending) return;
+    const parsedAmount = Number(editPendingAmount);
+    if (Number.isNaN(parsedAmount) || parsedAmount <= 0) {
+      toast({
+        title: 'Invalid amount',
+        description: 'Please enter a valid amount.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      await updateMockSettlementRecord(selectedPending.lot_id, {
+        amount: parsedAmount,
+        status: editPendingStatus,
+        updatedBy: user?.id,
+      });
+
+      setPendingSettlements((prev) => {
+        const updated = prev.map((row) =>
+          row.lot_id === selectedPending.lot_id
+            ? { ...row, amount: parsedAmount, status: editPendingStatus }
+            : row
+        );
+        return updated.filter((row) => row.status === 'pending');
+      });
+
+      setIsPendingDialogOpen(false);
+      setSelectedPending(null);
+      toast({
+        title: 'Pending bid updated',
+        description: 'Settlement details were saved.',
+      });
+    } catch (error) {
+      console.error('Error updating pending bid settlement:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save settlement updates.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const getMethodLabel = (method: string) => {
     return PAYMENT_METHODS.find(m => m.value === method)?.label || method;
   };
@@ -370,6 +521,10 @@ const Payments: React.FC = () => {
 
       <Tabs defaultValue="receipts" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="pending-bids" className="relative">
+            <Gavel className="h-4 w-4 mr-2" />
+            Pending Bids
+          </TabsTrigger>
           <TabsTrigger value="receipts" className="relative">
             <Receipt className="h-4 w-4 mr-2" />
             Payment Receipts
@@ -379,6 +534,73 @@ const Payments: React.FC = () => {
             QR Code Setup
           </TabsTrigger>
         </TabsList>
+
+        {/* ====== PENDING BIDS TAB ====== */}
+        <TabsContent value="pending-bids" className="space-y-4">
+          {isLoadingPending ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : pendingSettlements.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Gavel className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No pending won bids from completed auctions.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {pendingSettlements.map((row) => (
+                <Card key={row.lot_id} className="border-yellow-200 bg-yellow-50/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold">{row.bidder_name}</h3>
+                          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Pending
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{row.bidder_email}</p>
+                        <p className="text-sm">
+                          <span className="font-medium">{row.auction_title}</span> • Lot #{row.lot_number} - {row.lot_title}
+                        </p>
+                        <p className="text-sm font-semibold">Amount: ₱{row.amount.toLocaleString()}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button size="sm" variant="outline" onClick={() => handleEditPending(row)}>
+                          <SquarePen className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await updateMockSettlementRecord(row.lot_id, { status: 'paid', updatedBy: user?.id });
+                              setPendingSettlements((prev) => prev.filter((item) => item.lot_id !== row.lot_id));
+                              toast({ title: 'Marked paid', description: 'Pending bid was marked as paid.' });
+                            } catch (error) {
+                              console.error('Error marking settlement as paid:', error);
+                              toast({
+                                title: 'Error',
+                                description: 'Failed to mark settlement as paid.',
+                                variant: 'destructive',
+                              });
+                            }
+                          }}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Mark Paid
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
 
         {/* ====== RECEIPTS TAB ====== */}
         <TabsContent value="receipts" className="space-y-4">
@@ -645,6 +867,54 @@ const Payments: React.FC = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* ====== PENDING BID EDIT DIALOG ====== */}
+      <Dialog open={isPendingDialogOpen} onOpenChange={setIsPendingDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Pending Bid</DialogTitle>
+            <DialogDescription>
+              Update pending settlement details for the bidder's won lot.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedPending && (
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                {selectedPending.auction_title} • Lot #{selectedPending.lot_number} - {selectedPending.lot_title}
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={editPendingStatus} onValueChange={(value: 'pending' | 'paid') => setEditPendingStatus(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Amount</Label>
+                <Input
+                  type="number"
+                  value={editPendingAmount}
+                  onChange={(e) => setEditPendingAmount(e.target.value)}
+                  min={1}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPendingDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSavePendingEdit}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ====== RECEIPT VIEW DIALOG ====== */}
       <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>

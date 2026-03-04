@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,13 @@ import BidPanel from './BidPanel';
 import { AuctionLot, BidResponse } from '@/types/auction';
 import { toast } from '@/hooks/use-toast';
 import { InventoryItem } from '@/services/inventoryService';
+import {
+  MockLotSettlementRecord,
+  MockSettlementStatus,
+  getAuctionMockSettlements,
+  syncSoldLotsToMockSettlement,
+  updateMockSettlementStatus,
+} from '@/utils/mockAuctionSettlement';
 
 // Build ICE servers list — supports custom TURN via env vars
 const buildIceServers = (): RTCIceServer[] => {
@@ -110,6 +117,8 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
   const [quickBidAmount, setQuickBidAmount] = useState(0);
   const [manualBidInput, setManualBidInput] = useState('');
   const [isSubmittingBid, setIsSubmittingBid] = useState(false);
+  const [settlementByLotId, setSettlementByLotId] = useState<Record<string, MockLotSettlementRecord>>({});
+  const [hidePaidLots, setHidePaidLots] = useState(false);
 
   const isBidder = profile?.role === 'bidder';
   const isStaffOrAdmin = profile?.role && ['staff', 'admin', 'super-admin', 'auction-manager'].includes(profile.role);
@@ -173,6 +182,46 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
     const openLot = lots.find(lot => lot.status === 'OPEN');
     setCurrentLot(openLot || lots[0] || null);
   }, [lots]);
+
+  const refreshSettlementMap = useCallback(async () => {
+    try {
+      const rows = await getAuctionMockSettlements(auctionId);
+      setSettlementByLotId(
+        rows.reduce<Record<string, MockLotSettlementRecord>>((acc, row) => {
+          acc[row.lotId] = row;
+          return acc;
+        }, {})
+      );
+    } catch (error) {
+      console.error('[Auction] Failed to refresh settlement map:', error);
+    }
+  }, [auctionId]);
+
+  useEffect(() => {
+    const soldLots = lots
+      .filter((lot) => lot.status === 'SOLD' && !!lot.current_bidder_id)
+      .map((lot) => ({
+        lotId: lot.id,
+        auctionId: lot.auction_id,
+        bidderId: lot.current_bidder_id as string,
+        lotTitle: lot.title,
+        lotNumber: lot.lot_number,
+        amount: lot.current_price,
+      }));
+
+    const syncAndRefresh = async () => {
+      try {
+        if (soldLots.length > 0) {
+          await syncSoldLotsToMockSettlement(soldLots);
+        }
+      } catch (error) {
+        console.error('[Auction] Failed syncing sold lots:', error);
+      } finally {
+        await refreshSettlementMap();
+      }
+    };
+    syncAndRefresh();
+  }, [lots, auctionId, refreshSettlementMap]);
 
   // Cleanup camera on unmount — only releases hardware, does NOT end the auction
   useEffect(() => {
@@ -912,13 +961,51 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
   const endAuction = async () => {
     try {
       releaseCamera();
+      const nowIso = new Date().toISOString();
+
+      // Finalize remaining lots so winning bidders are reflected in My Bids.
+      // OPEN/PENDING lots with a highest bidder become SOLD; otherwise SKIPPED.
+      const { data: lotsToFinalize, error: lotsFetchError } = await supabase
+        .from('auction_lots')
+        .select('id, current_bidder_id')
+        .eq('auction_id', auctionId)
+        .in('status', ['OPEN', 'PENDING']);
+
+      if (lotsFetchError) {
+        console.warn('[Auction] Failed to fetch lots for finalization:', lotsFetchError);
+      } else if (lotsToFinalize && lotsToFinalize.length > 0) {
+        const soldLotIds = lotsToFinalize.filter((lot) => !!lot.current_bidder_id).map((lot) => lot.id);
+        const skippedLotIds = lotsToFinalize.filter((lot) => !lot.current_bidder_id).map((lot) => lot.id);
+
+        if (soldLotIds.length > 0) {
+          const { error: soldUpdateError } = await supabase
+            .from('auction_lots')
+            .update({ status: 'SOLD', updated_at: nowIso })
+            .in('id', soldLotIds);
+
+          if (soldUpdateError) {
+            console.warn('[Auction] Failed to mark sold lots:', soldUpdateError);
+          }
+        }
+
+        if (skippedLotIds.length > 0) {
+          const { error: skippedUpdateError } = await supabase
+            .from('auction_lots')
+            .update({ status: 'SKIPPED', updated_at: nowIso })
+            .in('id', skippedLotIds);
+
+          if (skippedUpdateError) {
+            console.warn('[Auction] Failed to mark skipped lots:', skippedUpdateError);
+          }
+        }
+      }
 
       // Update auction status to completed
       const { error: auctionError } = await supabase
         .from('auction_events')
         .update({ 
           status: 'completed',
-          updated_at: new Date().toISOString()
+          updated_at: nowIso
         })
         .eq('id', auctionId);
 
@@ -937,7 +1024,7 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
         .from('auction_streams')
         .update({ 
           is_active: false,
-          updated_at: new Date().toISOString()
+          updated_at: nowIso
         })
         .eq('auction_id', auctionId);
 
@@ -1137,6 +1224,31 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 5);
   };
+
+  const setLotPaymentStatus = async (lot: AuctionLot, status: MockSettlementStatus) => {
+    try {
+      const updated = await updateMockSettlementStatus(lot.id, status, user?.id);
+      if (!updated) return;
+      await refreshSettlementMap();
+      toast({
+        title: 'Payment status updated',
+        description: `Lot #${lot.lot_number} is now ${status}.`,
+      });
+    } catch (error) {
+      console.error('[Auction] Failed to update lot settlement status:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update payment status.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const visibleLots = lots.filter((lot) => {
+    if (!hidePaidLots) return true;
+    const settlement = settlementByLotId[lot.id];
+    return !(lot.status === 'SOLD' && settlement?.status === 'paid');
+  });
 
   if (isCheckingAccess) {
     return (
@@ -1680,11 +1792,27 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
           {/* Lot List */}
           <Card>
             <CardHeader>
-              <CardTitle>All Lots</CardTitle>
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle>All Lots</CardTitle>
+                {isStaffOrAdmin && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">
+                      Pending Payment: {Object.values(settlementByLotId).filter((s) => s.status === 'pending').length}
+                    </Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setHidePaidLots((prev) => !prev)}
+                    >
+                      {hidePaidLots ? 'Show Paid Lots' : 'Hide Paid Lots'}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {lots.map((lot) => (
+                {visibleLots.map((lot) => (
                   <div
                     key={lot.id}
                     className={`p-3 rounded border cursor-pointer hover:bg-muted/50 ${
@@ -1698,6 +1826,14 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
                         <Badge className={getStatusColor(lot.status)} variant="secondary">
                           {lot.status}
                         </Badge>
+                        {lot.status === 'SOLD' && settlementByLotId[lot.id] && (
+                          <Badge
+                            variant={settlementByLotId[lot.id].status === 'paid' ? 'default' : 'outline'}
+                            className={settlementByLotId[lot.id].status === 'paid' ? '' : 'border-yellow-300 text-yellow-700'}
+                          >
+                            {settlementByLotId[lot.id].status === 'paid' ? 'PAID' : 'PENDING PAYMENT'}
+                          </Badge>
+                        )}
                         {isStaffOrAdmin && (
                           <button
                             className="ml-1 p-1 rounded-full hover:bg-red-100 text-muted-foreground hover:text-red-600 transition-colors"
@@ -1716,9 +1852,33 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
                     </div>
                     <div className="text-sm text-muted-foreground mb-1">{lot.title}</div>
                     <div className="text-sm font-semibold">₱{lot.current_price.toLocaleString()}</div>
+                    {isStaffOrAdmin && lot.status === 'SOLD' && settlementByLotId[lot.id] && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant={settlementByLotId[lot.id].status === 'pending' ? 'default' : 'outline'}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setLotPaymentStatus(lot, 'pending');
+                          }}
+                        >
+                          Mark Pending
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={settlementByLotId[lot.id].status === 'paid' ? 'default' : 'outline'}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setLotPaymentStatus(lot, 'paid');
+                          }}
+                        >
+                          Mark Paid
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
-                {lots.length === 0 && (
+                {visibleLots.length === 0 && (
                   <p className="text-center text-muted-foreground py-4">No lots available</p>
                 )}
               </div>
