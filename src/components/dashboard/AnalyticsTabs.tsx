@@ -8,11 +8,10 @@ import UsersComboChart from './charts/UsersComboChart';
 import { TimeFrame } from './data/chartTypes';
 
 interface AnalyticsTabsProps {
-  getChartLabel: () => string;
   timeFrame: TimeFrame;
 }
 
-const AnalyticsTabs: React.FC<AnalyticsTabsProps> = ({ getChartLabel, timeFrame }) => {
+const AnalyticsTabs: React.FC<AnalyticsTabsProps> = ({ timeFrame }) => {
   return (
     <Tabs defaultValue="overview" className="space-y-4">
       <TabsList>

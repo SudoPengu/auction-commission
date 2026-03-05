@@ -78,16 +78,16 @@ const Inventory = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-4 sm:p-6 space-y-6 overflow-x-hidden">
       {/* Header with QR Actions */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-3xl font-bold">Inventory Management</h1>
-        <div className="flex gap-3">
-          <Button onClick={() => setShowGenerateModal(true)} className="flex items-center gap-2">
+        <h1 className="text-3xl font-bold leading-tight">Inventory Management</h1>
+        <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-3">
+          <Button onClick={() => setShowGenerateModal(true)} className="w-full sm:w-auto flex items-center justify-center gap-2">
             <Plus className="w-4 h-4" />
             Generate QR Labels
           </Button>
-          <Button onClick={() => setShowScannerModal(true)} variant="outline" className="flex items-center gap-2">
+          <Button onClick={() => setShowScannerModal(true)} variant="outline" className="w-full sm:w-auto flex items-center justify-center gap-2">
             <ScanLine className="w-4 h-4" />
             Scan QR Code
           </Button>
@@ -95,13 +95,13 @@ const Inventory = () => {
       </div>
 
       <Tabs defaultValue="inventory" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="inventory" className="flex items-center gap-2">
-            <Package className="w-4 h-4" />
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 p-1">
+          <TabsTrigger value="inventory" className="flex min-w-0 items-center justify-center gap-2 whitespace-normal px-2 py-2 text-xs sm:text-sm">
+            <Package className="hidden h-4 w-4 sm:block" />
             Inventory Items
           </TabsTrigger>
-          <TabsTrigger value="labels" className="flex items-center gap-2">
-            <Tags className="w-4 h-4" />
+          <TabsTrigger value="labels" className="flex min-w-0 items-center justify-center gap-2 whitespace-normal px-2 py-2 text-xs sm:text-sm">
+            <Tags className="hidden h-4 w-4 sm:block" />
             QR Management
           </TabsTrigger>
         </TabsList>
@@ -127,12 +127,12 @@ const Inventory = () => {
             <p className="text-muted-foreground mb-6">
               Generate QR labels for bulk unloading and track their usage status.
             </p>
-            <div className="flex justify-center gap-3">
-              <Button onClick={() => setShowGenerateModal(true)}>
+            <div className="flex flex-col sm:flex-row justify-center gap-3">
+              <Button onClick={() => setShowGenerateModal(true)} className="w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 Generate New Labels
               </Button>
-              <Button variant="outline" onClick={() => setShowScannerModal(true)}>
+              <Button variant="outline" onClick={() => setShowScannerModal(true)} className="w-full sm:w-auto">
                 <ScanLine className="w-4 h-4 mr-2" />
                 Scan & Create Item
               </Button>

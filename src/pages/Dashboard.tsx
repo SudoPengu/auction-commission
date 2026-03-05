@@ -1,40 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { toast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { QrCode, ScanLine, BarChart3, TrendingUp, Info, Package } from 'lucide-react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Info } from 'lucide-react';
 import TimeFrameSelector from '../components/dashboard/TimeFrameSelector';
 import MetricCards from '../components/dashboard/MetricCards';
 import AnalyticsTabs from '../components/dashboard/AnalyticsTabs';
 import RecentActivity from '../components/dashboard/RecentActivity';
-import { GenerateLabelsModal } from '@/components/GenerateLabelsModal';
 
 type TimeFrame = '1D' | '1W' | '1M' | '3M' | '1Y';
 
 const Dashboard: React.FC = () => {
   const { profile } = useAuth();
-  const navigate = useNavigate();
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('1D');
-  const [showGenerateLabels, setShowGenerateLabels] = useState(false);
   
   useEffect(() => {
     console.log("Dashboard mounted, user profile:", profile);
   }, [profile]);
   
   const canViewAnalytics = profile && ['admin', 'super-admin'].includes(profile.role);
-  
-  const getChartLabel = () => {
-    switch (timeFrame) {
-      case '1D': return 'Today\'s Sales';
-      case '1W': return 'This Week\'s Sales';
-      case '1M': return 'This Month\'s Sales';
-      case '3M': return 'Last 3 Months Sales';
-      case '1Y': return 'This Year\'s Sales';
-    }
-  };
   
   return (
     <div className="space-y-6">
@@ -47,53 +30,12 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
       
-      {/* QR Scanning Hero Section - Lazada-inspired design */}
-      <Card 
-        className="relative overflow-hidden rounded-2xl brand-surface border border-primary/20 hover:border-primary/30 hover:shadow-lg transition-all duration-300 cursor-pointer animate-enter group"
-        onClick={() => navigate('/qr-scanner')}
-      >
-        <CardContent className="p-8">
-          {/* Decorative background shapes */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-brand-magenta/10 to-brand-indigo/10 rounded-full blur-xl transform translate-x-16 -translate-y-16" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-brand-orange/10 to-brand-blue/10 rounded-full blur-lg transform -translate-x-8 translate-y-8" />
-          
-          <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4 flex-1">
-              <div className="p-3 rounded-2xl bg-primary/15 border border-primary/20 group-hover:bg-primary/20 transition-colors">
-                <QrCode className="h-10 w-10 text-primary" />
-              </div>
-              <div className="text-foreground">
-                <h2 className="text-2xl font-bold mb-2 group-hover:text-primary transition-colors">Faster intake with QR scanning</h2>
-                <p className="text-muted-foreground text-lg leading-relaxed">Scan items to create and manage inventory in seconds.</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <div className="text-muted-foreground text-sm font-semibold">Click anywhere or</div>
-                <div className="text-foreground text-lg font-bold group-hover:text-primary transition-colors">Start Scanning</div>
-              </div>
-              <Button
-                className="group/btn rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring brand-blue-gradient"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowGenerateLabels(true);
-                }}
-              >
-                <Package className="h-5 w-5 opacity-90 group-hover/btn:scale-110 transition-transform" />
-                Generate Labels
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
       {canViewAnalytics ? (
         <Card>
           <CardContent className="pt-6 space-y-6">
             <TimeFrameSelector timeFrame={timeFrame} setTimeFrame={setTimeFrame} />
             <MetricCards timeFrame={timeFrame} />
-            <AnalyticsTabs getChartLabel={getChartLabel} timeFrame={timeFrame} />
+            <AnalyticsTabs timeFrame={timeFrame} />
           </CardContent>
         </Card>
       ) : (
@@ -113,10 +55,6 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="flex flex-wrap gap-4 text-xs">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 brand-gradient rounded"></div>
-              <span className="text-muted-foreground">QR Operations</span>
-            </div>
-            <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-primary rounded"></div>
               <span className="text-muted-foreground">Analytics</span>
             </div>
@@ -128,14 +66,6 @@ const Dashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Generate Labels Modal */}
-      <GenerateLabelsModal
-        open={showGenerateLabels}
-        onOpenChange={setShowGenerateLabels}
-        onComplete={() => {
-          // Could refresh some data here
-        }}
-      />
     </div>
   );
 };

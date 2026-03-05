@@ -22,15 +22,15 @@ const ChartWrapper: React.FC<ChartWrapperProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <Card className={className}>
+      <Card className={`min-w-0 ${className}`.trim()}>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">{title}</CardTitle>
           {description && (
             <p className="text-xs text-muted-foreground">{description}</p>
           )}
         </CardHeader>
-        <CardContent>
-          <div className="h-[200px] w-full">
+        <CardContent className="min-w-0 overflow-hidden px-3 sm:px-6">
+          <div className="h-[200px] w-full min-w-0">
             <Skeleton className="h-full w-full" />
           </div>
         </CardContent>
@@ -39,15 +39,15 @@ const ChartWrapper: React.FC<ChartWrapperProps> = ({
   }
 
   return (
-    <Card className={className}>
+    <Card className={`min-w-0 ${className}`.trim()}>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         {description && (
           <p className="text-xs text-muted-foreground">{description}</p>
         )}
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={config} className="h-[200px] w-full">
+      <CardContent className="min-w-0 overflow-hidden px-3 sm:px-6">
+        <ChartContainer config={config} className="h-[200px] w-full min-w-0 aspect-auto">
           {children as React.ReactElement}
         </ChartContainer>
       </CardContent>

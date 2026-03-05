@@ -180,7 +180,7 @@ const MyBids: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-6">
+    <div className="space-y-6 pb-6 overflow-x-hidden">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">My Bids</h1>
@@ -319,10 +319,16 @@ const MyBids: React.FC = () => {
       </div>
 
       <Tabs defaultValue="active" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="active">Active Bids ({activeBids.length})</TabsTrigger>
-          <TabsTrigger value="completed">Completed ({completedBids.length})</TabsTrigger>
-          <TabsTrigger value="all">All Bids ({filteredBids.length})</TabsTrigger>
+        <TabsList className="grid h-auto w-full grid-cols-3 gap-1 p-1">
+          <TabsTrigger value="active" className="px-2 py-2 text-xs sm:text-sm whitespace-normal">
+            Active Bids ({activeBids.length})
+          </TabsTrigger>
+          <TabsTrigger value="completed" className="px-2 py-2 text-xs sm:text-sm whitespace-normal">
+            Completed ({completedBids.length})
+          </TabsTrigger>
+          <TabsTrigger value="all" className="px-2 py-2 text-xs sm:text-sm whitespace-normal">
+            All Bids ({filteredBids.length})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="active" className="space-y-4">

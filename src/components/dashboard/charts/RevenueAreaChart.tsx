@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { Area, AreaChart, XAxis, YAxis, Tooltip } from 'recharts';
 import { useChartData } from '../data/chartDataService';
 import { TimeFrame } from '../data/chartTypes';
 import ChartWrapper from './shared/ChartWrapper';
@@ -18,6 +18,12 @@ const chartConfig = {
 
 const RevenueAreaChart: React.FC<RevenueAreaChartProps> = ({ timeFrame }) => {
   const { revenueData } = useChartData(timeFrame);
+
+  const formatTickLabel = (value: string) => {
+    if (!value.includes(':')) return value;
+    const [time, meridiem] = value.split(' ');
+    return `${time.split(':')[0]} ${meridiem}`;
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-PH', {
@@ -53,37 +59,40 @@ const RevenueAreaChart: React.FC<RevenueAreaChartProps> = ({ timeFrame }) => {
       description="Total revenue over time"
       config={chartConfig}
     >
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={revenueData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-          <defs>
-            <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.05}/>
-            </linearGradient>
-          </defs>
-          <XAxis 
-            dataKey="date" 
-            axisLine={false}
-            tickLine={false}
-            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-          />
-          <YAxis 
-            axisLine={false}
-            tickLine={false}
-            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-            tickFormatter={formatCurrency}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Area
-            type="monotone"
-            dataKey="value"
-            stroke="hsl(var(--primary))"
-            fillOpacity={1}
-            fill="url(#revenueGradient)"
-            strokeWidth={2}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
+      <AreaChart data={revenueData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        <defs>
+          <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.05}/>
+          </linearGradient>
+        </defs>
+        <XAxis 
+          dataKey="date" 
+          axisLine={false}
+          tickLine={false}
+          tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+          tickFormatter={formatTickLabel}
+          interval="preserveStartEnd"
+          minTickGap={20}
+          tickMargin={6}
+        />
+        <YAxis 
+          axisLine={false}
+          tickLine={false}
+          tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+          tickFormatter={formatCurrency}
+          width={38}
+        />
+        <Tooltip content={<CustomTooltip />} />
+        <Area
+          type="monotone"
+          dataKey="value"
+          stroke="hsl(var(--primary))"
+          fillOpacity={1}
+          fill="url(#revenueGradient)"
+          strokeWidth={2}
+        />
+      </AreaChart>
     </ChartWrapper>
   );
 };

@@ -1262,12 +1262,12 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{auctionTitle}</h1>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+      <div className="flex items-center justify-between min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold break-words">{auctionTitle}</h1>
+          <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mt-1">
             <div className="flex items-center gap-1">
               <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
               {isConnected ? 'Connected' : 'Disconnected'}
@@ -1470,11 +1470,11 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           {!isStreaming && !isLoadingCamera && (
                             <Button 
                               size="sm" 
-                              className="bg-primary hover:bg-primary/90 text-white"
+                              className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto"
                               onClick={startCamera}
                               disabled={isLoadingCamera}
                             >
@@ -1486,7 +1486,7 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              className="bg-white/10 border-white/20 text-white"
+                              className="bg-white/10 border-white/20 text-white w-full sm:w-auto"
                               disabled
                             >
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
@@ -1498,7 +1498,7 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
                               <Button 
                                 size="sm" 
                                 variant="outline" 
-                                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                                className="bg-white/10 border-white/20 text-white hover:bg-white/20 w-full sm:w-auto"
                                 onClick={stopCamera}
                               >
                                 <VideoOff className="h-4 w-4 mr-1" />
@@ -1508,7 +1508,7 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
                                 <Button 
                                   size="sm" 
                                   variant="outline" 
-                                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                                  className="bg-white/10 border-white/20 text-white hover:bg-white/20 w-full sm:w-auto"
                                   onClick={() => {
                                     // Open next lot logic
                                     const currentIndex = lots.findIndex(l => l.id === currentLot.id);
@@ -1522,23 +1522,24 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
                               )}
                             </>
                           )}
-                          <div className="flex-1"></div>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="bg-red-600/80 border-red-500 text-white hover:bg-red-700"
-                            onClick={() => {
-                              if (confirm('Are you sure you want to end this auction? This will mark it as completed and stop the stream for all bidders.')) {
-                                endAuction();
-                              }
-                            }}
-                          >
-                            <Square className="h-4 w-4 mr-1" />
-                            End Auction
-                          </Button>
-                          <Button size="sm" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
-                            <Settings className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="bg-red-600/80 border-red-500 text-white hover:bg-red-700 flex-1 sm:flex-none"
+                              onClick={() => {
+                                if (confirm('Are you sure you want to end this auction? This will mark it as completed and stop the stream for all bidders.')) {
+                                  endAuction();
+                                }
+                              }}
+                            >
+                              <Square className="h-4 w-4 mr-1" />
+                              End Auction
+                            </Button>
+                            <Button size="sm" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
+                              <Settings className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1739,7 +1740,7 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
                         key={item.id}
                         className="p-3 rounded border hover:bg-muted/50 transition-colors"
                       >
-                        <div className="flex items-start justify-between gap-3">
+                        <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <h4 className="font-medium truncate">{item.name || item.id}</h4>
@@ -1762,7 +1763,7 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
                           <Button
                             size="sm"
                             onClick={() => convertInventoryToLot(item)}
-                            className="shrink-0"
+                            className="w-full sm:w-auto shrink-0"
                           >
                             <Plus className="h-4 w-4 mr-1" />
                             Add to Auction
@@ -1791,17 +1792,18 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
 
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <CardTitle>All Lots</CardTitle>
                 {isStaffOrAdmin && (
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">
-                      Pending Payment: {Object.values(settlementByLotId).filter((s) => s.status === 'pending').length}
+                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                    <Badge variant="outline" className="text-xs">
+                      Pending: {Object.values(settlementByLotId).filter((s) => s.status === 'pending').length}
                     </Badge>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => setHidePaidLots((prev) => !prev)}
+                      className="w-full sm:w-auto"
                     >
                       {hidePaidLots ? 'Show Paid Lots' : 'Hide Paid Lots'}
                     </Button>

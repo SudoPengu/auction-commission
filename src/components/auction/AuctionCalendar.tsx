@@ -107,14 +107,14 @@ export const AuctionCalendar: React.FC<AuctionCalendarProps> = ({ auctions, onDa
   }, [currentDate, getAuctionsForDate, onDateSelect, today]);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+    <Card className="min-w-0 overflow-hidden">
+      <CardHeader className="p-4 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl leading-tight">
             <CalendarDays size={20} />
             Auction Calendar
           </CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between sm:justify-end gap-2">
             <Button 
               variant="outline" 
               size="sm" 
@@ -124,7 +124,7 @@ export const AuctionCalendar: React.FC<AuctionCalendarProps> = ({ auctions, onDa
             >
               <ChevronLeft size={16} />
             </Button>
-            <span className="font-medium min-w-[120px] text-center">
+            <span className="font-medium text-center text-sm sm:text-base min-w-[110px] sm:min-w-[140px]">
               {monthName} {year}
             </span>
             <Button 
@@ -139,15 +139,15 @@ export const AuctionCalendar: React.FC<AuctionCalendarProps> = ({ auctions, onDa
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-7 gap-1 mb-2">
+      <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+        <div className="grid grid-cols-7 gap-1 mb-2 min-w-0">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-            <div key={day} className="h-8 flex items-center justify-center text-sm font-medium text-muted-foreground">
+            <div key={day} className="h-8 flex items-center justify-center text-xs sm:text-sm font-medium text-muted-foreground">
               {day}
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-1 min-w-0">
           {days}
         </div>
         

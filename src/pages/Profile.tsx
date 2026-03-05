@@ -93,9 +93,9 @@ const Profile: React.FC = () => {
   const isStaffOrAdmin = profile?.role && ['staff', 'admin', 'super-admin', 'auction-manager'].includes(profile.role);
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto overflow-x-hidden">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Profile</h1>
         <Button
           variant="outline"
           onClick={() => setIsEditing(!isEditing)}
@@ -107,11 +107,11 @@ const Profile: React.FC = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
-          <TabsTrigger value="preferences">Preferences</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
+        <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-4 gap-1 p-1">
+          <TabsTrigger value="overview" className="px-2 py-2 text-xs sm:text-sm">Overview</TabsTrigger>
+          <TabsTrigger value="activity" className="px-2 py-2 text-xs sm:text-sm">Activity</TabsTrigger>
+          <TabsTrigger value="preferences" className="px-2 py-2 text-xs sm:text-sm">Preferences</TabsTrigger>
+          <TabsTrigger value="security" className="px-2 py-2 text-xs sm:text-sm">Security</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -119,7 +119,7 @@ const Profile: React.FC = () => {
           {/* Profile Header Card */}
           <Card>
             <CardHeader>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 min-w-0">
                 <div className="relative">
                   <Avatar className="w-20 h-20">
                     <AvatarImage src="/placeholder-avatar.jpg" alt={profile?.full_name} />
@@ -138,18 +138,18 @@ const Profile: React.FC = () => {
                   )}
                 </div>
                 
-                <div className="flex-1 space-y-2">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                    <h2 className="text-2xl font-bold">{profile?.full_name}</h2>
-                    <Badge variant="outline" className={getRoleBadgeColor(profile?.role || '')}>
+                <div className="flex-1 space-y-2 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
+                    <h2 className="text-2xl font-bold break-words">{profile?.full_name}</h2>
+                    <Badge variant="outline" className={`w-fit ${getRoleBadgeColor(profile?.role || '')}`}>
                       <Shield size={12} className="mr-1" />
                       {profile?.role?.replace('-', ' ')}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground min-w-0">
+                    <div className="flex items-start gap-1 min-w-0">
                       <Mail size={14} />
-                      {profile?.email}
+                      <span className="break-all">{profile?.email}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Calendar size={14} />
@@ -437,10 +437,10 @@ const Profile: React.FC = () => {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Change Password</Label>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Input type="password" placeholder="Current password" />
                   <Input type="password" placeholder="New password" />
-                  <Button>Update</Button>
+                  <Button className="w-full sm:w-auto">Update</Button>
                 </div>
               </div>
               

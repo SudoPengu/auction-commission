@@ -77,29 +77,31 @@ const EntrancePayment: React.FC<EntrancePaymentProps> = ({
     <>
       <Card className="border-orange-200 bg-orange-50">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-orange-800">
+          <CardTitle className="flex items-start sm:items-center gap-2 text-orange-800 leading-tight">
             <PhilippinePeso className="h-5 w-5" />
             Entrance Fee Required
           </CardTitle>
-          <CardDescription className="text-orange-700">
+          <CardDescription className="text-orange-700 break-words">
             Pay entrance fee to access "{auctionTitle}" and participate in bidding
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-white rounded-lg border">
+            <div className="flex items-start gap-3 min-w-0">
               <PhilippinePeso className="h-5 w-5 text-gray-600" />
-              <div>
+              <div className="min-w-0">
                 <p className="font-semibold">Entrance Fee</p>
                 <p className="text-sm text-gray-600">Non-refundable, single auction access</p>
               </div>
             </div>
-            <Badge variant="secondary" className="text-lg font-bold">₱{entranceFee || 0}</Badge>
+            <Badge variant="secondary" className="text-lg font-bold w-fit self-start sm:self-auto">
+              ₱{(entranceFee || 0).toLocaleString()}
+            </Badge>
           </div>
 
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">Accepted Payment Methods:</p>
-            <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600">
               <div className="flex items-center gap-2">
                 <Smartphone className="h-4 w-4" />
                 GCash
@@ -120,7 +122,7 @@ const EntrancePayment: React.FC<EntrancePaymentProps> = ({
             className="w-full"
             size="lg"
           >
-            {`Pay ₱${entranceFee || 0} & Get Access`}
+            {`Pay ₱${(entranceFee || 0).toLocaleString()} & Get Access`}
           </Button>
 
           <p className="text-xs text-gray-500 text-center">
@@ -129,7 +131,7 @@ const EntrancePayment: React.FC<EntrancePaymentProps> = ({
           
           {/* Debug info - remove in production */}
           <div className="mt-2 p-2 bg-gray-100 rounded text-xs text-gray-600">
-            <p><strong>Auction ID:</strong> {auctionId}</p>
+            <p className="break-all"><strong>Auction ID:</strong> {auctionId}</p>
           </div>
         </CardContent>
       </Card>

@@ -92,9 +92,9 @@ const Users: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
       </div>
       
       <Card>
@@ -111,25 +111,25 @@ const Users: React.FC = () => {
             </div>
           ) : (
             <>
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0">
                 <h3 className="text-lg font-medium">User Accounts</h3>
-                <div className="rounded-md border">
-                  <table className="min-w-full divide-y divide-border">
+                <div className="rounded-md border overflow-x-auto">
+                  <table className="w-full min-w-[520px] sm:min-w-full divide-y divide-border">
                     <thead className="bg-muted/50">
                       <tr>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Name</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Email</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Username</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Role</th>
+                        <th className="px-3 sm:px-4 py-3 text-left text-sm font-medium">Name</th>
+                        <th className="px-3 sm:px-4 py-3 text-left text-sm font-medium">Email</th>
+                        <th className="hidden sm:table-cell px-3 sm:px-4 py-3 text-left text-sm font-medium">Username</th>
+                        <th className="hidden sm:table-cell px-3 sm:px-4 py-3 text-left text-sm font-medium">Role</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border bg-card">
                       {users.map((user) => (
                         <tr key={user.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => canUpdatePasswords && setSelectedUser(user.id)}>
-                          <td className="px-4 py-3 text-sm">{user.full_name}</td>
-                          <td className="px-4 py-3 text-sm">{user.email}</td>
-                          <td className="px-4 py-3 text-sm">{EMAIL_TO_USERNAME_MAP[user.email] || '-'}</td>
-                          <td className="px-4 py-3 text-sm capitalize">{user.role}</td>
+                          <td className="px-3 sm:px-4 py-3 text-sm whitespace-nowrap">{user.full_name}</td>
+                          <td className="px-3 sm:px-4 py-3 text-sm break-all">{user.email}</td>
+                          <td className="hidden sm:table-cell px-3 sm:px-4 py-3 text-sm">{EMAIL_TO_USERNAME_MAP[user.email] || '-'}</td>
+                          <td className="hidden sm:table-cell px-3 sm:px-4 py-3 text-sm capitalize">{user.role}</td>
                         </tr>
                       ))}
                     </tbody>
