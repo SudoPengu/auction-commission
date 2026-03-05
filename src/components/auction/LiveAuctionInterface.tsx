@@ -1789,7 +1789,6 @@ const LiveAuctionInterface: React.FC<LiveAuctionInterfaceProps> = ({
             />
           )}
 
-          {/* Lot List */}
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between gap-2">

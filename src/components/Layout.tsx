@@ -1,13 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import { useAuth } from '../contexts/AuthContext';
-import { toast } from "@/components/ui/use-toast";
 import { POSUIProvider } from '@/contexts/POSUIContext';
-import POSHandle from './pos/POSHandle';
-import POSFlyout from './pos/POSFlyout';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,19 +13,11 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isAuthenticated, profile } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   
   useEffect(() => {
     console.log("Layout mounted, auth state:", { isAuthenticated, profileRole: profile?.role, currentPath: location.pathname });
-    
-    // Redirect to login if not authenticated
-    if (!isAuthenticated) {
-      console.log("Not authenticated in Layout, redirecting to login");
-      navigate('/login');
-      return;
-    }
-  }, [isAuthenticated, profile, navigate, location.pathname]);
+  }, [isAuthenticated, profile, location.pathname]);
   
   const toggleSidebar = () => {
     console.log("Toggling sidebar, current state:", sidebarOpen);
@@ -55,10 +44,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {children}
           </main>
         </div>
-        
-        {/* POS System */}
-        <POSHandle />
-        <POSFlyout />
       </div>
     </POSUIProvider>
   );

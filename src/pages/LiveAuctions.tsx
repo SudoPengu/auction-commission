@@ -13,6 +13,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import BidderWelcomeBanner from '../components/bidder/BidderWelcomeBanner';
 import { BidderFriendlyStats } from '../components/profile/BidderFriendlyStats';
+import { useSearchParams } from 'react-router-dom';
 
 // Placeholder auctions - cleared of sample data
 const placeholderAuctions: AuctionEvent[] = [];
@@ -24,8 +25,33 @@ const LiveAuctions: React.FC = () => {
   
   const [auctionEvents, setAuctionEvents] = useState<AuctionEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedAuction, setSelectedAuction] = useState<AuctionEvent | null>(null);
+  const [selectedAuctionId, setSelectedAuctionId] = useState<string | null>(
+    () => sessionStorage.getItem('activeAuctionId') || null
+  );
+  const [selectedAuctionTitle, setSelectedAuctionTitle] = useState<string>(
+    () => sessionStorage.getItem('activeAuctionTitle') || 'Live Auction'
+  );
   const [isNewAuctionModalOpen, setIsNewAuctionModalOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const selectedAuction = selectedAuctionId
+    ? auctionEvents.find((auction) => auction.id === selectedAuctionId) || null
+    : null;
+
+  useEffect(() => {
+    const auctionIdFromQuery = searchParams.get('auction');
+    if (auctionIdFromQuery && auctionIdFromQuery !== selectedAuctionId) {
+      setSelectedAuctionId(auctionIdFromQuery);
+      sessionStorage.setItem('activeAuctionId', auctionIdFromQuery);
+    }
+  }, [searchParams, selectedAuctionId]);
+
+  useEffect(() => {
+    if (selectedAuction?.title && selectedAuction.title !== selectedAuctionTitle) {
+      setSelectedAuctionTitle(selectedAuction.title);
+      sessionStorage.setItem('activeAuctionTitle', selectedAuction.title);
+    }
+  }, [selectedAuction?.title, selectedAuctionTitle]);
 
   useEffect(() => {
     const fetchAuctions = async () => {
@@ -122,7 +148,15 @@ const LiveAuctions: React.FC = () => {
       // Find the auction and redirect to live interface
       const auction = auctionEvents.find(a => a.id === id);
       if (auction) {
-        setSelectedAuction(auction);
+        setSelectedAuctionId(id);
+        setSelectedAuctionTitle(auction.title);
+        sessionStorage.setItem('activeAuctionId', id);
+        sessionStorage.setItem('activeAuctionTitle', auction.title);
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('auction', id);
+          return next;
+        }, { replace: true });
         toast({
           title: "Auction Started",
           description: `Auction is now live! You can start streaming.`,
@@ -376,7 +410,15 @@ const LiveAuctions: React.FC = () => {
 
     // For live auctions, open the live interface
     if (auction.status === 'LIVE') {
-      setSelectedAuction(auction);
+      setSelectedAuctionId(id);
+      setSelectedAuctionTitle(auction.title);
+      sessionStorage.setItem('activeAuctionId', id);
+      sessionStorage.setItem('activeAuctionTitle', auction.title);
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('auction', id);
+        return next;
+      }, { replace: true });
       return;
     }
 
@@ -395,7 +437,15 @@ const LiveAuctions: React.FC = () => {
   };
 
   const handleBackToList = () => {
-    setSelectedAuction(null);
+    setSelectedAuctionId(null);
+    setSelectedAuctionTitle('Live Auction');
+    sessionStorage.removeItem('activeAuctionId');
+    sessionStorage.removeItem('activeAuctionTitle');
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('auction');
+      return next;
+    }, { replace: true });
   };
 
   const getTotalStats = () => {
@@ -432,7 +482,7 @@ const LiveAuctions: React.FC = () => {
   };
 
   // If an auction is selected for live viewing, show the interface
-  if (selectedAuction) {
+  if (selectedAuctionId) {
     return (
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
@@ -446,13 +496,13 @@ const LiveAuctions: React.FC = () => {
           </Button>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold">Live Auction Interface</h1>
-            <p className="text-sm text-muted-foreground">Real-time bidding for {selectedAuction.title}</p>
+            <p className="text-sm text-muted-foreground">Real-time bidding for {selectedAuction?.title || selectedAuctionTitle}</p>
           </div>
         </div>
         
         <LiveAuctionInterface
-          auctionId={selectedAuction.id}
-          auctionTitle={selectedAuction.title}
+          auctionId={selectedAuctionId}
+          auctionTitle={selectedAuction?.title || selectedAuctionTitle}
         />
       </div>
     );

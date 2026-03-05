@@ -5,7 +5,6 @@ import {
   Users, 
   BarChart3, 
   User,
-  ShoppingCart,
   UserCircle,
   Gavel,
   CreditCard
@@ -30,12 +29,6 @@ export const navigationItems: NavItem[] = [
     icon: Package2,
     path: '/inventory',
     roles: ['staff', 'admin', 'super-admin']
-  },
-  {
-    name: 'POS',
-    icon: ShoppingCart,
-    path: '/pos',
-    roles: ['staff', 'admin', 'super-admin', 'auction-manager']
   },
   {
     name: 'Payments',

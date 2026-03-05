@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -14,6 +14,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const userIdRef = useRef<string | null>(null);
+  const profileRef = useRef<UserProfile | null>(null);
+
+  useEffect(() => {
+    userIdRef.current = user?.id ?? null;
+  }, [user?.id]);
+
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
 
   // Debug log (development only)
   useEffect(() => {
@@ -33,10 +43,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("Auth state changed:", event, session?.user?.id);
         
         if (session?.user) {
-          // Set user immediately for faster UI response
+          const isSameUser = userIdRef.current === session.user.id;
+          const hasProfile = !!profileRef.current;
+
+          // Keep user in sync, but avoid showing full-page loading
+          // on tab focus/token refresh when nothing really changed.
           setUser(session.user);
-          setIsLoading(true);
-          
+
+          if (event === 'TOKEN_REFRESHED' && isSameUser && hasProfile) {
+            return;
+          }
+
+          const shouldShowLoading = event === 'SIGNED_IN' || !isSameUser || !hasProfile;
+          if (shouldShowLoading) {
+            setIsLoading(true);
+          }
+
           // Defer Supabase calls to prevent deadlocks
           setTimeout(() => {
             fetchUserProfile(session.user.id, session.user.email)
@@ -51,6 +73,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               });
           }, 0);
         } else {
+          // For non-signout events, verify session first to avoid transient
+          // auth drops on tab minimize/focus or token refresh races.
+          if (event !== 'SIGNED_OUT') {
+            setTimeout(async () => {
+              try {
+                const { data: { session: verifiedSession } } = await supabase.auth.getSession();
+                if (verifiedSession?.user) {
+                  setUser(verifiedSession.user);
+                  if (!profileRef.current) {
+                    const verifiedProfile = await fetchUserProfile(verifiedSession.user.id, verifiedSession.user.email);
+                    setProfile(verifiedProfile);
+                  }
+                  setIsLoading(false);
+                  return;
+                }
+              } catch (verifyError) {
+                console.warn("Session re-check failed:", verifyError);
+              }
+
+              setUser(null);
+              setProfile(null);
+              setIsLoading(false);
+            }, 150);
+            return;
+          }
+
           setUser(null);
           setProfile(null);
           setIsLoading(false);
